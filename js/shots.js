@@ -68,6 +68,34 @@ export async function run(g, name) {
     info.pos1 = P.pos.toArray().map((v) => +v.toFixed(2)); info.area = g.area;
   } else if (name === 'roof') {
     P.pos.set(50, 5, 16); P.yaw = 2.5; place(G('kirill'), 51, 17.4, -1); step(g, 40); g.cam.yaw = 0.6; g.cam.pitch = 0.3; step(g, 20);
+  } else if (name === 'outfit' || name === 'shop') {
+    // outfit gallery / shop UI: ?shot=outfit&o=latex&view=front|side|back|quarter&fig=0|1  ·  ?shot=shop&o=bodycon&money=500&fame=120
+    const { save, applyOutfit } = await import('./outfits.js');
+    if (Q.has('money')) save.earn(+Q.get('money') - save.money); if (Q.has('fame')) save.fameUp(+Q.get('fame'));
+    g.guys.forEach((x) => place(x, 30, 30, 0)); step(g, 5);
+    g.shop.enter(); await g.shop.select(Q.get('o') || 'street', true);
+    if (Q.has('buy')) g.shop.action();
+    if (Q.has('fig')) { g.shop.figOn = Q.get('fig') === '1'; g.shop.applyFig(); g.shop.refresh(); }
+    g.shop.view(Q.get('view') || 'quarter');
+    if (Q.has('yaw')) g.shop.orb.tYaw = g.shop.orb.yaw = +Q.get('yaw');
+    if (Q.has('dist')) g.shop.orb.tDist = g.shop.orb.dist = +Q.get('dist');
+    if (Q.has('pitch')) g.shop.orb.tPitch = g.shop.orb.pitch = +Q.get('pitch');
+    if (name === 'outfit') { document.getElementById('shop').style.display = 'none'; g.shop.orb.tDist = g.shop.orb.dist = +(Q.get('dist') || 2.9); }
+    step(g, 40); await new Promise((r) => setTimeout(r, 300)); step(g, 2);
+    info.outfit = g.rusana.vrm.userData.outfit; info.money = save.money; info.owned = save.owned; info.eq = save.outfit;
+    info.vis = []; g.rusana.vrm.scene.traverse((o) => { if (o.isMesh) for (const m of [].concat(o.material)) if (/CLOTH/.test(m.name) && !m.isOutline) info.vis.push(m.name.replace('F00_', '') + ':' + m.visible); });
+    info.fig = []; g.rusana.vrm.scene.traverse((o) => { const k = o.isMesh && o.morphTargetDictionary?.Figure; if (k !== undefined && k !== false) info.fig.push(+o.morphTargetInfluences[k].toFixed(2)); });
+  } else if (name === 'outfitfight') {
+    // equipped outfit in a fight: ?shot=outfitfight&o=corset&move=kick&n=7
+    const { applyOutfit } = await import('./outfits.js'); await applyOutfit(g.rusana.vrm, Q.get('o') || 'street');
+    const d = G('dima'); g.guys.forEach((x) => { if (x !== d) place(x, 30, 30, 0); });
+    P.pos.set(-14, 0, 0); P.yaw = Math.PI / 2; place(d, -12.6, 0, -Math.PI / 2); d.mode = 'alert'; d.met = true; d.decideT = 99; d.trait = { ...d.trait, guard: 0, dodge: 0 };
+    step(g, 30); P.request(Q.get('move') || 'kick'); let k = 0; while (!P.resolved && k++ < 60) step(g, 1);
+    step(g, +(Q.get('n') || 7), 1 / 60); info.grade = g.stats;
+    g.camOverride = { pos: V(-13.0 + (+(Q.get('cx') || 0.6)), 1.15, +(Q.get('cz') || 3.3)), look: V(-13.2, 0.8, 0), fov: 40 }; g.fixedDt = 1 / 240; g.tick();
+  } else if (name === 'storefront') {
+    P.pos.set(-1, 0, 4.2); P.yaw = 0; g.guys.forEach((x) => place(x, 30, 30, 0)); step(g, 30);
+    g.camOverride = { pos: V(-1 + 3.2, 1.7, 0.2), look: V(-1, 1.5, 6.5), fov: 55 }; step(g, 2);
   } else if (name === 'park') {
     P.pos.set(2, 0, -24); P.yaw = 0.3; step(g, 50); g.cam.yaw = 2.7; g.cam.dist = 6; g.cam.pitch = 0.35; step(g, 30);
   }

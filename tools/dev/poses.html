@@ -21,6 +21,8 @@ const who = q.get('c') || 'rusana';
 const partnerDef = q.get('g') ? GUYS.find(g => g.id === q.get('g')) || { base: q.get('g') } : null;
 const vA = await mk(who, GUYS.find(g => g.base === who && q.get('tint')));
 if (q.get('hideMat')) { const re = new RegExp(q.get('hideMat')); vA.scene.traverse((o) => { if (o.isMesh) for (const m of [].concat(o.material)) if (re.test(m.name)) { m.visible = false; } }); }
+if (who === 'rusana') { const show = (q.get('show') || '').split(','); vA.scene.traverse((o) => { if (!o.isMesh) return; for (const m of [].concat(o.material)) { if (/Tops_01_CLOTH_Low/.test(m.name)) m.visible = show.includes('TopsLow'); else if (/Tops_01/.test(m.name)) m.visible = show.includes('Tops'); else if (/Bottoms/.test(m.name)) m.visible = show.includes('Bottoms'); }
+  if (o.morphTargetDictionary && 'Figure' in o.morphTargetDictionary) o.morphTargetInfluences[o.morphTargetDictionary.Figure] = +(q.get('fig') || 0); }); }
 const A = new Actor(vA, data); S.add(A.root);
 let B = null;
 if (partnerDef) { const vB = await mk(partnerDef.base, partnerDef.hair !== undefined ? partnerDef : null); B = new Actor(vB, data, {}); S.add(B.root); }

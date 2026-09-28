@@ -10,7 +10,8 @@ import { Guy } from './ai.js';
 import { FX } from './fx.js';
 import { Sfx } from './audio.js';
 import { UI } from './ui.js';
-import { OUTFITS, save, applyOutfit } from './outfits.js';
+import { OUTFITS, save, applyOutfit, outfitById } from './outfits.js';
+import { Shop } from './shop.js';
 
 const $ = (id) => document.getElementById(id);
 const Q = new URLSearchParams(location.search);
@@ -44,7 +45,7 @@ class Game {
     const rv = await parseVRM(bufs.rusana); stylize(rv, { rimColor: 0xffd8e0 });
     await applyOutfit(rv, Q.get('outfit') || save.outfit).catch((e) => console.warn('outfit', e));
     this.rusana = new Actor(rv, this.clipData, { prefix: 'r_' }); this.scene.add(this.rusana.root);
-    this.player = new Player(this.rusana, this);
+    this.player = new Player(this.rusana, this); this.shop = new Shop(this); this.shop.shown = outfitById(Q.get('outfit') || save.outfit).id;
     for (const def of GUYS) {
       const v = await parseVRM(bufs[def.base]); stylize(v); tint(v, def);
       const a = new Actor(v, this.clipData, { prefix: 'g_', scale: def.scale }); this.scene.add(a.root);
@@ -102,7 +103,7 @@ class Game {
   endFinisher() { this.finSlow = 0; }
   onDefeat(guy) {
     const style = 15 + Math.min(20, this.combo * 2);
-    this.rep += style;
+    this.rep += style; save.fameUp(this.rep);
     // money: base per win + style bonus + tougher guys pay more
     const cash = 40 + Math.min(40, this.combo * 5) + (guy.trait.tough > 1.2 ? 25 : 0) + (this.player.move === 'finisher' ? 20 : 0);
     save.earn(cash); save.win(); this.stats.cash = (this.stats.cash || 0) + cash;
@@ -120,7 +121,9 @@ class Game {
     const I = this.input, cv = $('game');
     addEventListener('keydown', (e) => {
       if (!this.started || e.repeat) { if (e.repeat) I.keys.add(e.code); return; }
+      if (this.shopMode) { if (e.code === 'KeyM') this.ui.hint(this.sfx.toggle() ? 'Звук выключен' : 'Звук включён'); else this.shop.key(e); return; }
       I.keys.add(e.code);
+      if (e.code === 'KeyB') { this.shop.enter(); return; }
       if (e.code === 'KeyJ') this.player.request('kick');
       if (e.code === 'KeyK') this.player.request('knee');
       if (e.code === 'KeyF') this.player.request('finisher');
@@ -133,7 +136,7 @@ class Game {
     cv.addEventListener('contextmenu', (e) => e.preventDefault());
     let drag = null;
     cv.addEventListener('mousedown', (e) => {
-      if (!this.started) return;
+      if (!this.started || this.shopMode) return;
       if (document.pointerLockElement !== cv) { if (e.button === 0 && !Q.has('nolock')) cv.requestPointerLock?.(); drag = { x: e.clientX, y: e.clientY }; return; }
       if (e.button === 0) this.player.request('kick'); else if (e.button === 2) this.player.request('knee');
     });
@@ -143,7 +146,7 @@ class Game {
       if (document.pointerLockElement === cv) { dx = e.movementX; dy = e.movementY; } else if (drag) { dx = e.clientX - drag.x; dy = e.clientY - drag.y; drag = { x: e.clientX, y: e.clientY }; }
       if (dx || dy) { this.cam.yaw -= dx * 0.0032; this.cam.pitch = Math.max(-0.35, Math.min(1.1, this.cam.pitch + dy * 0.0028)); this.cam.lastMouse = this.now; }
     });
-    addEventListener('wheel', (e) => { this.cam.dist = Math.max(1.8, Math.min(7, this.cam.dist * (1 + Math.sign(e.deltaY) * 0.1))); }, { passive: true });
+    addEventListener('wheel', (e) => { if (this.shopMode) return; this.cam.dist = Math.max(1.8, Math.min(7, this.cam.dist * (1 + Math.sign(e.deltaY) * 0.1))); }, { passive: true });
   }
   readMove() {
     const I = this.input, k = I.keys;
@@ -175,10 +178,25 @@ class Game {
     cam.lookAt(c.pivot);
     const fov = 50 + (P.state === 'dash' ? 8 : 0) + (this.witch > 0 ? -4 : 0); cam.fov += (fov - cam.fov) * Math.min(1, dt * 8); cam.updateProjectionMatrix(); cam.updateMatrixWorld();
   }
+  // walk into the boutique door -> shop; a hint when passing by
+  checkBoutique() {
+    const bq = this.world.boutique, P = this.player; if (!bq || !this.started) return;
+    const d = bq.door, inDoor = P.pos.x > d.x0 && P.pos.x < d.x1 && P.pos.z > d.z0 && P.pos.y < 0.5;
+    if (inDoor && this.shop.armed) { this.shop.enter(); return; }
+    if (!inDoor && P.pos.distanceTo(bq.exit) > 1.2) this.shop.armed = true;
+    const near = Math.hypot(P.pos.x - bq.x, P.pos.z - bq.z) < 5;
+    if (near && !this.nearFight && !this._bqHint) { this._bqHint = true; this.ui.hint('Бутик «Шёлк»: зайди в дверь (или нажми B) — примерка образов', 4); }
+    if (!near) this._bqHint = false;
+  }
   // ------------------------------------------------ loop
   tick() {
     let rdt = Math.min(0.05, this.clock.getDelta()); if (this.fixedDt) rdt = this.fixedDt; this.frames = (this.frames || 0) + 1;
     if (this.paused) { this.R.composer.render(); return; }
+    if (this.shopMode) {   // boutique: only Rusana animates, the district is frozen
+      this.now += rdt; this.shop.update(rdt); this.rusana.update(rdt); this.world.update(this.now);
+      this.sky.material.uniforms.time.value = this.now; this.R.grade.uniforms.time.value = this.now;
+      this.updateCamera(rdt); this.fx.update(rdt, rdt); this.R.composer.render(); this.R.adapt(rdt); return;
+    }
     let gs = 1, ps = 1;                                  // game (guys) and player time scales
     if (this.hitStop > 0) { this.hitStop -= rdt; gs = ps = 0.03; }
     else if (this.witch > 0) { this.witch -= rdt; gs = 0.3; if (this.witch <= 0) { this.fx.speedLines(0); this.R.grade.uniforms.tintAmt.value = 0; } }
@@ -200,6 +218,7 @@ class Game {
     this.lights.follow(this.player.pos);
     this.updateCamera(rdt);
     this.fx.update(dt, rdt); this.ui.update(rdt);
+    this.checkBoutique();
     const ar = this.world.areaAt(this.player.pos);
     if (ar && ar !== this.area && this.started) { this.area = ar; this.ui.toast(this.world.areas[ar].name); }
     this.R.composer.render(); this.R.adapt(rdt);
@@ -208,8 +227,8 @@ class Game {
 
 // ------------------------------------------------ boot: age gate → loading → title → game
 const game = new Game();
-// future outfit shop hooks: __bba.shop.list / buy(id) / equip(id)
-window.__bba = { game, shop: { list: OUTFITS, save, buy: (id) => save.buy(id), equip: async (id) => { if (!save.setOutfit(id)) return false; await applyOutfit(game.rusana.vrm, id); return true; } } };
+// debug / test hooks: __bba.shop.list / buy(id) / equip(id)
+window.__bba = { game, shop: { list: OUTFITS, save, buy: (id) => save.buy(id), equip: async (id) => { if (!save.setOutfit(id)) return false; await applyOutfit(game.rusana.vrm, id); game.shop.shown = outfitById(id).id; return true; } } };
 const gate = $('gate'), title = $('title');
 const skipGate = Q.has('skipgate') || Q.has('shot');
 let loaded = null;

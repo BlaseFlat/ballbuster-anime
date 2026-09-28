@@ -73,3 +73,42 @@ kbd{background:rgba(255,255,255,.14);border-radius:5px;padding:1px 6px;font-fami
 #loadTxt{font-size:12px;opacity:.7;margin-top:4px}
 @media (max-width:760px){.cols{grid-template-columns:1fr}.logo span{font-size:38px}}
 #money{font-weight:800;color:#9dffb0;font-size:15px;margin-top:2px;text-shadow:1px 1px 0 #1c1426}
+
+/* ---------- boutique «Шёлк» ---------- */
+#shop{position:fixed;inset:0;display:none;z-index:30;cursor:grab}
+#shop.show{display:block}#shop:active{cursor:grabbing}
+#shopView{position:absolute;inset:0}
+body.inshop #hud,body.inshop #plates,body.inshop #popups{display:none}
+#shopTop{position:absolute;left:0;right:0;top:0;height:58px;display:flex;align-items:center;gap:18px;padding:0 20px;background:linear-gradient(180deg,rgba(40,10,32,.85),rgba(40,10,32,0));cursor:default}
+.st-logo{font-size:22px;letter-spacing:.06em;color:#ffd6ea;text-shadow:0 0 12px #ff5fa2}.st-logo b{color:#fff}
+#shopRank{margin-left:auto;font-weight:700;color:var(--gold);font-size:14px}
+#shopMoney{font-size:22px;font-weight:900;background:rgba(0,0,0,.35);padding:4px 14px;border-radius:20px;border:2px solid var(--gold)}
+#shop button{font:inherit;cursor:pointer;border:0;border-radius:10px;color:#fff}
+#shopClose{background:rgba(255,255,255,.14);padding:8px 14px;font-weight:700}#shopClose:hover{background:rgba(255,255,255,.25)}
+#shopList{position:absolute;left:16px;top:70px;bottom:52px;width:300px;overflow-y:auto;display:flex;flex-direction:column;gap:6px;padding-right:4px;cursor:default}
+#shopList::-webkit-scrollbar{width:6px}#shopList::-webkit-scrollbar-thumb{background:rgba(255,255,255,.25);border-radius:3px}
+.scard{display:flex;align-items:center;gap:10px;padding:7px 10px;border-radius:12px;background:rgba(24,14,34,.78);border:2px solid rgba(255,255,255,.08);transition:.12s;cursor:pointer}
+.scard:hover{border-color:rgba(255,95,162,.6)}
+.scard.sel{border-color:var(--pink);background:rgba(70,18,52,.9);box-shadow:0 0 14px rgba(255,79,139,.45)}
+.scard .sw{width:38px;height:38px;border-radius:9px;flex:none;border:2px solid rgba(255,255,255,.3)}
+.sc-t{flex:1;min-width:0;display:flex;flex-direction:column}.sc-t b{font-size:15px}.sc-t span{font-size:11px;opacity:.7;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sc-p{font-weight:800;font-size:13px;color:var(--gold);white-space:nowrap}.sc-p i{font-style:normal;color:#9fe8b8;font-weight:700}
+.scard.eq .sc-p i{color:#7fd3ff}.scard.locked{opacity:.62}.scard.locked .sc-p{color:#ff9db0;font-size:11px}
+.scard.bought{animation:bought .8s}@keyframes bought{30%{transform:scale(1.05);background:rgba(255,213,74,.35)}}
+#shopCard{position:absolute;right:18px;top:78px;width:330px;padding:16px 18px;border-radius:16px;background:rgba(24,14,34,.84);border:2px solid rgba(255,95,162,.35);cursor:default}
+#shopName{font-size:28px;font-weight:900;text-shadow:2px 2px 0 var(--berry)}
+#shopStyle{font-size:13px;color:#ffd6ea;margin:2px 0 8px}
+#shopTags{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:8px}.tg{font-size:11px;padding:2px 8px;border-radius:10px;background:rgba(255,255,255,.12)}
+.tg.fig{background:rgba(255,79,139,.35);color:#fff;font-weight:700}.tg.rk{background:rgba(255,213,74,.25);color:var(--gold)}
+#shopDesc{font-size:14px;line-height:1.35;opacity:.92;margin-bottom:12px}
+#shopPrice{font-size:16px;margin-bottom:10px}#shopPrice b{color:var(--gold);font-size:20px}
+#shopBtn{width:100%;padding:12px;font-size:17px;font-weight:900}
+#shopBtn.buy{background:linear-gradient(90deg,#ff4f8b,#ff7a3d);box-shadow:0 4px 0 #8e1244}#shopBtn.wear{background:linear-gradient(90deg,#7a5cff,#ff4f8b);box-shadow:0 4px 0 #3b1f8e}
+#shopBtn.eq{background:#2e7d57}#shopBtn.lock,#shopBtn.poor{background:#4a3a52;color:#d8c8dc;cursor:not-allowed}
+#shopNote{font-size:12px;opacity:.7;margin-top:8px;min-height:15px}
+#shopCtl{position:absolute;right:18px;bottom:52px;display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;width:330px;cursor:default}
+#shopCtl button{background:rgba(24,14,34,.8);padding:7px 11px;font-size:13px;border:2px solid rgba(255,255,255,.12)}#shopCtl button:hover,#shopCtl button.on{border-color:var(--pink)}
+#shopFig{background:rgba(120,20,70,.85)!important}
+#shopHelp{position:absolute;left:0;right:0;bottom:14px;text-align:center;font-size:12px;opacity:.7;pointer-events:none}
+@media (max-width:900px){#shopList{width:220px}#shopCard{width:260px}#shopCtl{width:260px}}
+body.inshop #hint,body.inshop #toast{z-index:40;position:fixed}

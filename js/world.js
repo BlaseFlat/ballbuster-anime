@@ -131,7 +131,7 @@ export class World {
     for (let x = -41; x <= 41; x += 1.4) { B(x, 0.141, 5.6, 0.04, 0.005, 2.8, 0xc4b8aa, { outline: false }); B(x, 0.141, -5.6, 0.04, 0.005, 2.8, 0xc4b8aa, { outline: false }); }
     // --- shops, south side (z>0) and north side (z<0), leaving a gate to the park at x∈[-5,5] north
     const pal = [0xf6d7b0, 0xf2b5b5, 0xb9e3d0, 0xc9c1ee, 0xf7e7a1, 0xa9d3f2, 0xf3c6a0, 0xe7b7d6];
-    const shops = [['Кофейня «Утро»', '#8a4b2a'], ['Раменная', '#d83a3a'], ['Цветы', '#e36aa2'], ['Аптека', '#2aa36b'], ['Караоке «Звезда»', '#6a4ad8'], ['Комиксы', '#2a7bd8'], ['Пекарня', '#d89a2a'], ['Суши', '#1f8f8f'], ['Спорттовары', '#d85a2a'], ['Книги', '#5a6a2a']];
+    const shops = [['Кофейня «Утро»', '#8a4b2a'], ['Раменная', '#d83a3a'], ['Цветы', '#e36aa2'], ['Аптека', '#2aa36b'], ['Бутик «Шёлк»', '#d6336c'], ['Комиксы', '#2a7bd8'], ['Пекарня', '#d89a2a'], ['Суши', '#1f8f8f'], ['Спорттовары', '#d85a2a'], ['Книги', '#5a6a2a']];
     let si = 0;
     const building = (x0, x1, side, h, color, shop) => {
       const w = x1 - x0, cx = (x0 + x1) / 2, d = side < 0 ? 5 : 10, zf = side * 7.2, cz = zf + side * d / 2;
@@ -181,6 +181,8 @@ export class World {
     for (const [x, z, c, r] of [[-30, -3.2, 0xe86a6a, 0], [-8, 3.2, 0x6ab0e8, Math.PI], [24, -3.2, 0xf2d060, 0], [35, 3.2, 0xffffff, Math.PI]]) this.car(x, z, c, r);
     this.buildPark();
     this.buildClub();
+    this.buildStorefront(-1, 7.2);
+    this.buildBoutique();
     this.buildSkyline();
     this.finalize();
   }
@@ -295,6 +297,67 @@ export class World {
     this.lamp(44, -7.5); this.lamp(58, -7.5); this.lamp(44, 5.5);
     // connect plaza with street end (open) — low planters as edge
     for (const z of [-8.5, 5.8]) this.box(39.5, 0, z, 1.2, 0.6, 1.2, 0xa98f7a, { collide: true });
+  }
+  // ---------- boutique «Шёлк»: storefront on the south side of the street + try-on room (below the map) ----------
+  buildStorefront(cx, zf) {
+    const B = this.box.bind(this), f = zf - 0.02;
+    B(cx, 0.14, f - 0.01, 9.4, 2.6, 0.1, 0xf6b8cf, { outline: false });                      // pink glass
+    B(cx, 0.14, f - 0.05, 1.7, 2.55, 0.08, 0x3a1f33);                                       // door frame
+    B(cx, 0.2, f - 0.1, 1.4, 2.35, 0.04, 0xffe6f0, { outline: false });                       // door glass
+    B(cx + 0.5, 1.1, f - 0.14, 0.06, 0.4, 0.05, 0xe0b23a);                                  // handle
+    B(cx, 0.141, f - 1.1, 2.2, 0.012, 2.0, 0xd6336c, { outline: false });                    // carpet
+    for (const dx of [-1.4, 1.4]) { this.cyl(cx + dx, 0.14, f - 0.9, 0.25, 0.2, 0.55, 0x2b2230, 10); this.sphere(cx + dx, 1.0, f - 0.9, 0.42, 0x6fb56a); }  // potted plants
+    // mannequins in the windows (simple toon silhouettes in outfits)
+    const mq = (x, top, bottom) => {
+      const z = f - 0.25;
+      this.cyl(x, 0.14, z, 0.18, 0.18, 0.05, 0x2b2230, 12); this.cyl(x, 0.19, z, 0.02, 0.02, 0.55, 0xc8c0c8, 6);
+      this.cyl(x, 0.74, z, 0.1, 0.075, 0.55, 0xf1e4e8, 10);                                // legs
+      this.add(new THREE.SphereGeometry(0.17, 12, 8), bottom, { pos: new THREE.Vector3(x, 1.32, z), scale: new THREE.Vector3(1.05, 0.7, 0.8) });   // hips
+      this.cyl(x, 1.3, z, 0.12, 0.1, 0.12, bottom, 10);
+      this.add(new THREE.CylinderGeometry(0.13, 0.1, 0.34, 12), top, { pos: new THREE.Vector3(x, 1.58, z) });
+      this.add(new THREE.SphereGeometry(0.14, 12, 8), top, { pos: new THREE.Vector3(x, 1.7, z - 0.02), scale: new THREE.Vector3(1.2, 0.75, 0.85) });   // bust
+      this.cyl(x, 1.78, z, 0.04, 0.04, 0.12, 0xf1e4e8, 6); this.sphere(x, 1.98, z, 0.1, 0xf1e4e8);
+    };
+    mq(cx - 3.3, 0xc8102e, 0xc8102e); mq(cx - 2.2, 0x121015, 0x121015); mq(cx + 2.2, 0xf7f3f0, 0x5c7fb5); mq(cx + 3.3, 0xff5d8f, 0xff5d8f);
+    this.sign('♥ ШЁЛК ♥', cx, 2.75, f - 0.12, 2.4, 0.5, { rot: Math.PI, neon: true, fg: '#ff5fa2' });
+    this.sign('НОВАЯ КОЛЛЕКЦИЯ', cx - 2.8, 2.35, f - 0.08, 2.2, 0.32, { rot: Math.PI, bg: '#ffffff', fg: '#d6336c' });
+    this.sign('−0% СКИДОК', cx + 2.8, 2.35, f - 0.08, 2.0, 0.32, { rot: Math.PI, bg: '#ffffff', fg: '#d6336c' });
+    // entrance trigger (walk into the door) — checked by the game
+    this.boutique = { x: cx, z: zf, door: { x0: cx - 1.1, x1: cx + 1.1, z0: zf - 0.75 }, exit: new THREE.Vector3(cx, 0, zf - 1.9) };
+    const glow = new THREE.Mesh(new THREE.RingGeometry(0.45, 0.62, 32), new THREE.MeshBasicMaterial({ color: new THREE.Color(1.8, 0.5, 1.0), transparent: true, opacity: 0.7, toneMapped: false, depthWrite: false }));
+    glow.rotation.x = -Math.PI / 2; glow.position.set(cx, 0.16, zf - 0.55); this.scene.add(glow);
+    this.anim.push((t) => { glow.material.opacity = 0.45 + 0.3 * Math.sin(t * 3); glow.scale.setScalar(1 + 0.06 * Math.sin(t * 3)); });
+  }
+  buildBoutique() {
+    const B = this.box.bind(this); const O = this.shopRoom = { x: 0, y: -40, z: 0 }; const { x, y, z } = O;
+    B(x, y - 0.2, z, 12, 0.2, 11, 0xd9b3c4, { outline: false });                                   // floor
+    for (let i = -5; i <= 5; i++) B(x + i, y + 0.001, z, 0.03, 0.005, 11, 0xc99fb2, { outline: false });
+    for (let k = -5; k <= 5; k++) B(x, y + 0.001, z + k, 12, 0.005, 0.03, 0xc99fb2, { outline: false });
+    B(x, y, z - 5.5, 12, 5, 0.2, 0xf7c9da);                                                          // back wall (pink)
+    B(x, y, z + 5.5, 12, 5, 0.2, 0xfbe9e0);                                                          // front wall
+    B(x - 6, y, z, 0.2, 5, 11, 0xfbe9e0); B(x + 6, y, z, 0.2, 5, 11, 0xfbe9e0);                       // side walls
+    B(x, y + 5, z, 12.4, 0.2, 11.4, 0xfff6f2, { outline: false });                                 // ceiling
+    for (const [px, pz] of [[-2.5, -2], [2.5, -2], [-2.5, 2], [2.5, 2], [0, 0]]) B(x + px, y + 4.9, z + pz, 1.2, 0.1, 1.2, 0xffffff, { outline: false });   // light panels
+    B(x, y, z - 5.35, 12, 0.25, 0.1, 0xd6336c); B(x, y + 3.3, z - 5.38, 12, 0.08, 0.05, 0xe0b23a);   // skirting / gold line
+    // podium
+    this.cyl(x, y, z, 1.25, 1.25, 0.08, 0xd6336c, 32); this.cyl(x, y + 0.08, z, 1.1, 1.15, 0.12, 0xe9d6de, 32);
+    // mirror on the back wall + velvet curtain fitting rooms
+    B(x + 3.6, y + 0.2, z - 5.3, 1.6, 2.9, 0.1, 0xe0b23a); B(x + 3.6, y + 0.3, z - 5.24, 1.35, 2.7, 0.06, 0xbfd9ea, { outline: false });
+    for (const cx of [-4.2, -2.6]) { B(x + cx, y + 2.7, z - 4.6, 1.4, 0.06, 0.06, 0xe0b23a); B(x + cx, y, z - 4.6, 1.3, 2.7, 0.08, 0x8e1244); }
+    // clothes racks along the side walls
+    const cols = [0xc8102e, 0x121015, 0xff5d8f, 0xf7f3f0, 0x5c7fb5, 0x33d1c4, 0x5a0d1f, 0xe0b23a, 0xf0a3bd, 0x1f2a36];
+    for (const s of [-1, 1]) for (const rz of [-2.8, 0.2, 3.0]) {
+      const rx = x + s * 5.2; this.cyl(rx, y, z + rz - 1.1, 0.03, 0.03, 1.7, 0xd9d0d8, 6); this.cyl(rx, y, z + rz + 1.1, 0.03, 0.03, 1.7, 0xd9d0d8, 6);
+      B(rx, y + 1.65, z + rz, 0.05, 0.05, 2.3, 0xd9d0d8);
+      for (let k = 0; k < 9; k++) B(rx, y + 0.85 + (k % 3) * 0.08, z + rz - 1.0 + k * 0.25, 0.42, 0.75 - (k % 3) * 0.08, 0.06, cols[(k * 3 + (rz > 0 ? 5 : 0) + (s > 0 ? 2 : 0)) % cols.length]);
+    }
+    // sofa + plants + shoe shelf
+    B(x - 2.2, y, z + 4.4, 2.6, 0.45, 0.9, 0xb3134f); B(x - 2.2, y + 0.45, z + 4.8, 2.6, 0.55, 0.25, 0xb3134f);
+    for (const [px, pz] of [[-5.3, 4.8], [5.3, 4.8], [5.3, -4.8]]) { this.cyl(x + px, y, z + pz, 0.3, 0.25, 0.6, 0x2b2230, 10); this.sphere(x + px, y + 1.1, z + pz, 0.5, 0x6fb56a); }
+    for (let k = 0; k < 3; k++) { B(x + 1.2, y + 0.4 + k * 0.5, z + 4.95, 2.4, 0.04, 0.5, 0xe8dde4); for (let j = 0; j < 5; j++) B(x + 0.3 + j * 0.45, y + 0.44 + k * 0.5, z + 4.95, 0.22, 0.12, 0.3, cols[(j + k * 2) % cols.length]); }
+    this.sign('ШЁЛК', x, y + 3.9, z - 5.38, 3.2, 0.9, { neon: true, fg: '#ff5fa2' });
+    this.sign('бутик', x, y + 3.25, z - 5.38, 1.4, 0.35, { neon: true, fg: '#ffd6ea' });
+    O.center = new THREE.Vector3(x, y + 0.2, z);
   }
   buildSkyline() {
     const cols = [0x9fb6d6, 0xb3c4e0, 0x8ea8cc, 0xc2cde6];

@@ -134,6 +134,8 @@ b2 = recolor_hair(b2)
 nails = (yy > 805) & (lum < 0.25) & ((np.abs(xx - 336) < 15) | (np.abs(xx - 687) < 15))
 nh = hsv(b2)[..., 2] / 255
 # (nail tint dropped: it bled onto the back of the hands)
+# hair-tie colour lives on a hidden scalp texel (see build_rusana.py)
+cv2.circle(b2, (int(0.5 * Ww), int(0.87 * Hh)), int(18 * k), (112, 20, 40, 255), -1)
 save(b2, 'F00_000_00_Body_00.png')
 # outfit mask for runtime outfit swaps (js/outfits.js): R = top, G = shorts, B = trim (hems), 1024 px
 om = np.zeros((Hh, Ww, 4), np.float32); om[..., 3] = 255

@@ -31,8 +31,19 @@ def delete_faces(obj, pred):
 # ---- body: drop jacket + skirt; mild soft-athletic shaping of thighs / hips ----
 body = bpy.data.objects['Body']
 mats = [m.name for m in body.data.materials]
-drop = {i for i, n in enumerate(mats) if 'Tops' in n or 'Bottoms' in n}
-delete_faces(body, lambda f: f.material_index in drop)
+# Jacket (Tops) and pleated skirt (Bottoms) are KEPT for the outfit shop (hidden at runtime by default).
+cloth_idx = {i for i, n in enumerate(mats) if 'Tops' in n or 'Bottoms' in n}
+tops_i = [i for i, n in enumerate(mats) if 'Tops' in n][0]
+# crop split: lower jacket faces get their own material slot so the runtime can hide them (crop jacket)
+low = body.data.materials[tops_i].copy(); low.name = mats[tops_i] + '_Low'
+body.data.materials.append(low); low_i = len(body.data.materials) - 1
+_mw = body.matrix_world
+CROP_Z = P.get('cropz', 1.06)
+for f in body.data.polygons:
+    if f.material_index == tops_i and (_mw @ f.center).z < CROP_Z: f.material_index = low_i
+cloth_idx.add(low_i)
+cloth_v = {v for f in body.data.polygons if f.material_index in cloth_idx for v in f.vertices}
+print('CLOTH verts', len(cloth_v))
 vg = {g.name: g.index for g in body.vertex_groups}
 me = body.data
 # Shaping (world space; VRoid import has a 180° Z rotation): fuller rounder glutes, toned thighs & calves.
@@ -45,11 +56,14 @@ print('SHAPE hipz %.3f kneez %.3f back %s' % (hipz, kneez, tuple(back)))
 gz = hipz + P.get('gz', -0.08)
 for v in me.vertices:
     w = 0.0; wh = 0.0; wl = 0.0
-    for g in v.groups:
-        n = body.vertex_groups[g.group].name
-        if 'UpperLeg' in n: w += g.weight
-        if 'LowerLeg' in n: wl += g.weight
-        if n == 'J_Bip_C_Hips': wh += g.weight
+    if v.index in cloth_v:
+        wh = 1.0 if (mw @ v.co).z < hipz + 0.12 else 0.0     # skirt/jacket hem follow hips & glutes
+    else:
+        for g in v.groups:
+            n = body.vertex_groups[g.group].name
+            if 'UpperLeg' in n: w += g.weight
+            if 'LowerLeg' in n: wl += g.weight
+            if n == 'J_Bip_C_Hips': wh += g.weight
     if w <= 0 and wh <= 0 and wl <= 0: continue
     p = mw @ v.co; nw = (mw3 @ v.normal).normalized(); d = Vector((0, 0, 0))
     fb = max(0.0, nw.dot(back))
@@ -135,7 +149,7 @@ bpy.ops.mesh.primitive_torus_add(major_radius=0.024, minor_radius=0.009, major_s
 tie = bpy.context.active_object; tie.name = 'HairTie'
 for p in tie.data.polygons: p.use_smooth = True
 uvl = tie.data.uv_layers.active or tie.data.uv_layers.new()
-for l in uvl.data: l.uv = (0.49 + random.uniform(-0.01, 0.01), 1 - 0.27)
+for l in uvl.data: l.uv = (0.5 + random.uniform(-0.004, 0.004), 1 - 0.87)   # hidden scalp texel painted with the tie colour
 tie.data.materials.append(body.data.materials[mats.index([m for m in mats if 'Body' in m][0])])
 g = tie.vertex_groups.new(name='J_Bip_C_Head'); g.add(list(range(len(tie.data.vertices))), 1.0, 'REPLACE')
 mod = tie.modifiers.new('Armature', 'ARMATURE'); mod.object = arm
@@ -150,12 +164,40 @@ names = {b.name for b in arm.data.bones}
 for i in reversed(range(len(sa.bone_groups))):
     gp = sa.bone_groups[i]
     bn = [b.bone_name for b in gp.bones]
-    if gp.comment in ('Skirt', 'TopsUpperArm'):
-        sa.bone_groups.remove(i); continue
     if any(n.startswith(('HairJoint-a8676c3f', 'HairJoint-6860b79f', 'HairJoint-b91b9ff0', 'HairJoint-0ac4a3ee')) for n in bn):
         sa.bone_groups.remove(i); continue
     if any(n.startswith('HairJoint-df29e53e') for n in bn):
         gp.stiffiness = 0.55; gp.gravity_power = 0.25; gp.drag_force = 0.35; gp.hit_radius = 0.03
+# ---- "Figure" shape key: fuller bust, hips, glutes, thighs (used per outfit at runtime, 0..1) ----
+def figure_field(p):
+    d = Vector((0, 0, 0)); fwd = -back
+    for side in ('L', 'R'):
+        c = bw('J_Sec_%s_Bust1' % side); c2 = bw('J_Sec_%s_Bust2' % side)
+        cc = c * 0.4 + c2 * 0.6; r = P.get('bustr', 0.105); q = p - cc; dist = q.length
+        if dist < r:
+            wgt = (1 - (dist / r) ** 2) ** 2
+            if q.dot(fwd) > -0.02:
+                d += q * (P.get('bust', 0.22) * wgt) + fwd * (0.010 * wgt) + Vector((0, 0, 0.004 * wgt))
+    zg = math.exp(-((p.z - (hipz - 0.03)) / 0.11) ** 2)
+    if p.z < hipz + 0.14 and p.z > kneez:
+        d += Vector((p.x * P.get('fhip', 0.12) * zg, 0, 0))                                 # wider hips
+        gb = math.exp(-((p.z - gz) / 0.08) ** 2) * math.exp(-((abs(p.x) - 0.07) / 0.08) ** 2)
+        if (p - Vector((p.x, 0, p.z))).dot(back) > -0.01: d += back * (P.get('fglute', 0.026) * gb)   # rounder glutes
+    if kneez + 0.04 < p.z < hipz - 0.02:                                      # thighs
+        ax = 0.085 if p.x > 0 else -0.085
+        rv = Vector((p.x - ax, 0, 0)); rv.y = p.y - (hipC.y if 'hipC' in globals() else 0)
+        fade = math.sin(min(1, (p.z - kneez - 0.04) / 0.25) * math.pi * 0.5)
+        if rv.length > 1e-4: d += rv.normalized() * (0.009 * fade)
+    return d
+hipC = bw('J_Bip_C_Hips')
+mwb = body.matrix_world; mwbi = mwb.inverted().to_3x3()
+if not body.data.shape_keys: body.shape_key_add(name='Basis', from_mix=False)
+fk = body.shape_key_add(name='Figure', from_mix=False)
+moved = 0
+for i, v in enumerate(body.data.vertices):
+    d = figure_field(mwb @ v.co)
+    if d.length > 1e-5: fk.data[i].co = v.co + mwbi @ d; moved += 1
+print('FIGURE moved', moved)
 meta = arm.data.vrm_addon_extension.vrm0.meta
 meta.title = 'Rusana (ballbuster-anime)'; meta.author = 'BlaseFlat (edit of pixiv VRoid AvatarSample_B)'
 bpy.ops.wm.save_as_mainfile(filepath=OUT.replace('.vrm', '.blend'))
