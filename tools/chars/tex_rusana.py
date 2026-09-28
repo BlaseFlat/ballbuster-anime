@@ -89,6 +89,13 @@ orig_hp = b[..., :3] - cv2.GaussianBlur(b[..., :3], (0, 0), 4 * k)
 sat_hi = cv2.dilate(((hsv(b)[..., 1] / 255 > 0.5) | odd).astype(np.uint8), np.ones((int(9 * k), int(9 * k)), np.uint8)).astype(bool)
 fill = np.where((neckz & sk & ~fillm & ~sat_hi)[..., None], fill + np.clip(orig_hp, -40, 25), fill)
 fillm = fillm | neckz
+# hands share UV space with the torso band: keep them skin (mask from hand_uv_mask.mjs)
+_hm = os.environ.get('HAND_MASK')
+if _hm and os.path.exists(_hm):
+    handm = cv2.resize((np.asarray(Image.open(_hm).convert('L')) > 0).astype(np.uint8), (Ww, Hh), interpolation=cv2.INTER_NEAREST)
+    handm = cv2.dilate(handm, np.ones((int(5 * k), int(5 * k)), np.uint8)).astype(bool) & (yy < 460)
+    top = top & ~handm
+    fillm = fillm | (handm & center)
 b2 = b.copy()
 b2[fillm, :3] = fill[fillm]
 # feather: soften the seam around filled regions
