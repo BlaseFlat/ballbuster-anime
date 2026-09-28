@@ -1,0 +1,41 @@
+<!doctype html><html><head><meta charset="utf-8"><style>body{margin:0;background:#8aa}</style>
+<script type="importmap">{"imports":{"three":"../../vendor/three/three.module.js","three/addons/":"../../vendor/three/addons/","@pixiv/three-vrm":"../../vendor/three-vrm/three-vrm.module.js"}}</script></head><body>
+<script type="module">
+// Pose/clip preview grid: ?c=vrm&clips=name@t,name@t&view=side|front|34&g=guy_a (second char at contact distance)
+import * as THREE from 'three';
+import { fetchVRM, parseVRM, Actor, stylize, tint } from '../../js/chars.js';
+import { allClipData, sampleProc, POSES } from '../../js/clips.js';
+import { GUYS } from '../../js/config.js';
+const q = new URLSearchParams(location.search);
+const lib = await (await fetch('../../assets/anim/quaternius.json')).json();
+const data = allClipData(lib);
+if (q.get('pose')) { const P = JSON.parse(q.get('pose')); for (const [nm, spec] of Object.entries(P)) { const base = POSES[spec.base] || {}; data[nm] = sampleProc({ keys: [{ t: 0, pose: { ...base, ...spec.o }, h: spec.h || [0, 0, 0] }, { t: 0.1, pose: { ...base, ...spec.o }, h: spec.h || [0, 0, 0] }] }); } }
+const cells = q.get('clips').split(',');
+const W = innerWidth, H = innerHeight, cols = Math.min(cells.length, +(q.get('cols') || 4)), rows = Math.ceil(cells.length / cols);
+const R = new THREE.WebGLRenderer({ antialias: true }); R.setSize(W, H); R.setScissorTest(true); document.body.appendChild(R.domElement);
+const S = new THREE.Scene(); S.background = new THREE.Color(0xa8c0d8);
+S.add(new THREE.HemisphereLight(0xffffff, 0x8899aa, 1.2)); const dl = new THREE.DirectionalLight(0xffffff, 2.0); dl.position.set(1, 3, 2); S.add(dl);
+const grid = new THREE.GridHelper(4, 8, 0x556677, 0x778899); S.add(grid);
+const mk = async (name, def) => { const v = await parseVRM(await fetchVRM('../../assets/vrm/' + name + '.vrm')); stylize(v); if (def) tint(v, def); return v; };
+const who = q.get('c') || 'rusana';
+const partnerDef = q.get('g') ? GUYS.find(g => g.id === q.get('g')) || { base: q.get('g') } : null;
+const vA = await mk(who, GUYS.find(g => g.base === who && q.get('tint')));
+const A = new Actor(vA, data); S.add(A.root);
+let B = null;
+if (partnerDef) { const vB = await mk(partnerDef.base, partnerDef.hair !== undefined ? partnerDef : null); B = new Actor(vB, data, {}); S.add(B.root); }
+const dist = +(q.get('d') || 0.74);
+let i = 0;
+for (const cell of cells) {
+  const [clip, t, clipB, tB] = cell.split(/[@:]/);
+  A.mixer.stopAllAction(); const a = A.actions[clip]; a.reset().play(); A.mixer.setTime(+t || 0); A.vrm.update(0); A.fixGround(1); (window.dbg=window.dbg||[]).push([clip, +A.groundOff.toFixed(3), A.ground.map(([n,c])=>n.name.replace('Normalized_','')+':'+c.toFixed(2)+':'+n.getWorldPosition(new THREE.Vector3()).y.toFixed(2)).join(' ')]);
+  if (B) { B.root.position.set(0, 0, dist); B.root.rotation.y = Math.PI; B.mixer.stopAllAction(); const b = B.actions[clipB || 'g_stance']; b.reset().play(); B.mixer.setTime(+(tB || 0)); B.vrm.update(0); B.fixGround(1); }
+  const cx = i % cols, cy = Math.floor(i / cols), w = W / cols, h = H / rows;
+  const cam = new THREE.PerspectiveCamera(30, w / h, 0.05, 50);
+  const view = q.get('view') || 'side', tgt = new THREE.Vector3(0, +(q.get('ty') || 0.85), B ? dist / 2 : 0), r = +(q.get('r') || 3.4);
+  const ang = { side: Math.PI / 2, front: 0, '34': Math.PI / 4, back: Math.PI, rside: -Math.PI / 2 }[view];
+  cam.position.set(tgt.x + Math.sin(ang) * r, tgt.y + 0.2, tgt.z + Math.cos(ang) * r); cam.lookAt(tgt);
+  R.setViewport(cx * w, H - (cy + 1) * h, w, h); R.setScissor(cx * w, H - (cy + 1) * h, w, h); R.render(S, cam);
+  i++;
+}
+window.info = { cells, dbg: window.dbg }; window.done = true;
+</script></body></html>

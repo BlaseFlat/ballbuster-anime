@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="bba-version" content="0.1.0">
+<meta name="rating" content="adult">
+<title>Боллбастер: Неоновый район (21+)</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="css/style.css?v=0.1.0">
+<script type="importmap">{"imports":{"three":"./vendor/three/three.module.js","three/addons/":"./vendor/three/addons/","@pixiv/three-vrm":"./vendor/three-vrm/three-vrm.module.js"}}</script>
+</head>
+<body>
+<canvas id="game"></canvas>
+
+<div id="hud">
+  <div id="repBox"><div class="lbl">Репутация</div><div id="rep">0</div><div id="rank">Новенькая</div><div id="goals"></div><div id="money">0 ₽</div></div>
+  <div id="tcard"><div class="row"><b id="tname"></b><i id="ttrait"></i></div><div id="tstate"></div><div class="pbar big"><div id="tpainFill"></div></div></div>
+  <div id="combo"><span id="comboN">0</span><span id="comboL">КОМБО</span></div>
+  <div id="focus"><div class="lbl">Фокус <span>F — добивание</span></div><div class="fbar"><div id="focusFill"></div></div></div>
+  <div id="log"></div>
+  <div id="keys">J/ЛКМ ап-кик · K/ПКМ колено · Пробел уклон · F добивание · H помощь</div>
+</div>
+<div id="plates"></div>
+<div id="popups"></div>
+<div id="toast"></div>
+<div id="banner"></div>
+<div id="hint"></div>
+
+<div id="gate" class="screen">
+  <div class="card">
+    <div class="badge">21+</div>
+    <h1>Только для взрослых</h1>
+    <p>Эта игра содержит мультяшное насилие ниже пояса и юмор для взрослых (удары в пах, «боллбастинг»). Всё — фантазия и слэпстик в аниме-стиле.</p>
+    <p class="small">Все персонажи — вымышленные совершеннолетние (21+). Не повторяйте в реальной жизни: удары в пах опасны.</p>
+    <p>Вам исполнилось 21 год, и вы согласны смотреть такой контент?</p>
+    <div class="btns"><button id="ageYes" class="primary">Мне 21+, войти</button><button id="ageNo">Уйти</button></div>
+  </div>
+</div>
+
+<div id="title" class="screen">
+  <div class="card wide">
+    <div class="logo"><span>БОЛЛБАСТЕР</span><em>Неоновый район</em></div>
+    <p class="story">Русана вернулась в свой старый квартал — а там теперь хозяйничают самоуверенные парни, которые цепляются к каждой девушке на улице. На торговой улице, во дворе-сквере, у клуба «Неон» и даже на крыше. У неё сильные ноги, отличная реакция и очень конкретный стиль: <b>точные удары снизу</b>. Проучи всех шестерых и стань королевой района.</p>
+    <div class="cols">
+      <div><h3>Управление</h3>
+        <ul><li><kbd>WASD</kbd> идти, <kbd>Shift</kbd> бег</li><li>мышь — камера (клик захватывает курсор), колесо — зум</li>
+        <li><kbd>J</kbd> / ЛКМ — ап-кик в пах</li><li><kbd>K</kbd> / ПКМ — колено (пробивает защиту)</li><li><kbd>Пробел</kbd> — уклон/рывок</li><li><kbd>F</kbd> — стильное добивание (полный Фокус)</li></ul></div>
+      <div><h3>Как драться</h3>
+        <ul><li>Рядом с целью Русана сама делает рывок и подбирает дистанцию, но оценка зависит от дистанции, угла и тайминга: <b>Идеально / Чисто / Скользом / Мимо / Блок</b>.</li>
+        <li>Бей, когда парень открыт: замах, дразнилка, после удара. Сзади — не успеет защититься.</li>
+        <li>Уклон прямо перед его ударом — <b>идеальный уклон</b> и замедление времени.</li>
+        <li>Стоит → вздрогнул → согнулся → на коленях → на полу → сдаётся. На коленях — низкий кик, на полу — стопой.</li></ul></div>
+    </div>
+    <div class="load"><div class="lbar"><div id="loadFill"></div></div><div id="loadTxt">…</div></div>
+    <div class="btns"><button id="startBtn" class="primary" disabled>Загрузка…</button></div>
+  </div>
+</div>
+
+<div id="help" class="screen"><div class="card"><h2>Помощь</h2>
+  <p><kbd>J</kbd>/ЛКМ — ап-кик · <kbd>K</kbd>/ПКМ — колено · <kbd>Пробел</kbd> — уклон · <kbd>F</kbd> — добивание · <kbd>Q</kbd>/<kbd>E</kbd> — повернуть камеру · <kbd>M</kbd> — звук</p>
+  <p>Серия точных ударов = комбо и больше репутации. Идеальные удары и уклоны заполняют Фокус.</p>
+  <div class="btns"><button id="helpClose" class="primary">Продолжить</button></div></div></div>
+
+<div id="end" class="screen"><div class="card"><div class="logo small"><span>КОРОЛЕВА РАЙОНА</span></div>
+  <p>Все шестеро проучены. Теперь в Неоновом районе девушек никто не трогает.</p><p id="endStats"></p>
+  <div class="btns"><button id="againBtn" class="primary">Играть снова</button></div></div></div>
+
+<noscript>Нужен JavaScript и WebGL2.</noscript>
+<script type="module" src="js/main.js?v=0.1.0"></script>
+</body>
+</html>

@@ -1,0 +1,50 @@
+<!doctype html><html><head><meta charset="utf-8">
+<script type="importmap">{"imports":{"three":"../../vendor/three/three.module.js","three/addons/":"../../vendor/three/addons/"}}</script></head><body>
+<script type="module">
+// Retarget Quaternius Universal Animation Library (CC0, T-pose bind, faces +Z) to VRM-1 normalized humanoid space.
+// Output per clip: rotations of VRM humanoid bones (local, rest = identity) + hips offset in units of source hip height.
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+const MAP = { hips:'DEF-hips', spine:'DEF-spine001', chest:'DEF-spine002', upperChest:'DEF-spine003', neck:'DEF-neck', head:'DEF-head' };
+for (const [s, S] of [['left','L'],['right','R']]) Object.assign(MAP, {
+  [s+'Shoulder']:'DEF-shoulder'+S, [s+'UpperArm']:'DEF-upper_arm'+S, [s+'LowerArm']:'DEF-forearm'+S, [s+'Hand']:'DEF-hand'+S,
+  [s+'UpperLeg']:'DEF-thigh'+S, [s+'LowerLeg']:'DEF-shin'+S, [s+'Foot']:'DEF-foot'+S, [s+'Toes']:'DEF-toe'+S,
+  [s+'ThumbMetacarpal']:'DEF-thumb01'+S, [s+'ThumbProximal']:'DEF-thumb02'+S, [s+'ThumbDistal']:'DEF-thumb03'+S,
+  ...Object.fromEntries(['Index','Middle','Ring','Little'].flatMap(f => { const q = {Index:'index',Middle:'middle',Ring:'ring',Little:'pinky'}[f];
+    return [[s+f+'Proximal','DEF-f_'+q+'01'+S],[s+f+'Intermediate','DEF-f_'+q+'02'+S],[s+f+'Distal','DEF-f_'+q+'03'+S]]; })) });
+const PARENT = { spine:'hips', chest:'spine', upperChest:'chest', neck:'upperChest', head:'neck' };
+for (const s of ['left','right']) Object.assign(PARENT, { [s+'Shoulder']:'upperChest', [s+'UpperArm']:s+'Shoulder', [s+'LowerArm']:s+'UpperArm', [s+'Hand']:s+'LowerArm',
+  [s+'UpperLeg']:'hips', [s+'LowerLeg']:s+'UpperLeg', [s+'Foot']:s+'LowerLeg', [s+'Toes']:s+'Foot',
+  [s+'ThumbMetacarpal']:s+'Hand', [s+'ThumbProximal']:s+'ThumbMetacarpal', [s+'ThumbDistal']:s+'ThumbProximal',
+  ...Object.fromEntries(['Index','Middle','Ring','Little'].flatMap(f => [[s+f+'Proximal', s+'Hand'],[s+f+'Intermediate', s+f+'Proximal'],[s+f+'Distal', s+f+'Intermediate']])) });
+const q = new URLSearchParams(location.search);
+const WANT = (q.get('clips') || '').split(',');
+const g = await new GLTFLoader().loadAsync('../../../bba_src/anim/AnimationLibrary_Godot_Standard.gltf');
+const s = g.scene; s.updateMatrixWorld(true);
+const node = {}; for (const [k, n] of Object.entries(MAP)) node[k] = s.getObjectByName(n);
+const rest = {}; for (const k in node) rest[k] = node[k].getWorldQuaternion(new THREE.Quaternion());
+const restHips = node.hips.getWorldPosition(new THREE.Vector3());
+const H = restHips.y;
+const mixer = new THREE.AnimationMixer(s);
+const out = {};
+for (const name of WANT) {
+  const clip = g.animations.find(a => a.name === name); if (!clip) { out[name] = null; continue; }
+  mixer.stopAllAction(); mixer.uncacheRoot(s); const act = mixer.clipAction(clip); act.play();
+  const fps = 30, n = Math.max(2, Math.round(clip.duration * fps) + 1);
+  const bones = {}; for (const k in node) bones[k] = [];
+  const hips = [];
+  for (let i = 0; i < n; i++) {
+    mixer.setTime(Math.min(clip.duration, i / fps)); s.updateMatrixWorld(true);
+    const delta = {};
+    for (const k in node) delta[k] = node[k].getWorldQuaternion(new THREE.Quaternion()).multiply(rest[k].clone().invert());
+    for (const k in node) {
+      const loc = PARENT[k] ? delta[PARENT[k]].clone().invert().multiply(delta[k]) : delta[k].clone();
+      bones[k].push(...loc.toArray().map(v => +v.toFixed(4)));
+    }
+    const p = node.hips.getWorldPosition(new THREE.Vector3()).sub(restHips).divideScalar(H);
+    hips.push(+p.x.toFixed(4), +p.y.toFixed(4), +p.z.toFixed(4));
+  }
+  out[name] = { dur: +clip.duration.toFixed(4), fps, n, bones, hips };
+}
+window.info = out; window.done = true;
+</script></body></html>

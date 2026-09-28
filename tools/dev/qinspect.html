@@ -1,0 +1,22 @@
+<!doctype html><html><head><meta charset="utf-8">
+<script type="importmap">{"imports":{"three":"../../vendor/three/three.module.js","three/addons/":"../../vendor/three/addons/"}}</script></head><body>
+<script type="module">
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+const g = await new GLTFLoader().loadAsync('../../../bba_src/anim/AnimationLibrary_Godot_Standard.gltf');
+const out = {};
+const s = g.scene; s.updateMatrixWorld(true);
+const get = n => s.getObjectByName(n);
+const dir = (a,b) => { const pa=new THREE.Vector3(), pb=new THREE.Vector3(); get(a).getWorldPosition(pa); get(b).getWorldPosition(pb); return pb.sub(pa).normalize().toArray().map(v=>+v.toFixed(3)); };
+const rep = (tag) => { s.updateMatrixWorld(true); out[tag] = { armL: dir('DEF-upper_armL','DEF-forearmL'), armR: dir('DEF-upper_armR','DEF-forearmR'), thighL: dir('DEF-thighL','DEF-shinL'), footL: dir('DEF-footL','DEF-toeL'), hipsY: +get('DEF-hips').getWorldPosition(new THREE.Vector3()).y.toFixed(3), headY:+get('DEF-head').getWorldPosition(new THREE.Vector3()).y.toFixed(3), hipsPos: get('DEF-hips').getWorldPosition(new THREE.Vector3()).toArray().map(v=>+v.toFixed(3)), footLpos:get('DEF-footL').getWorldPosition(new THREE.Vector3()).toArray().map(v=>+v.toFixed(3))}; };
+rep('bind');
+const mixer = new THREE.AnimationMixer(s);
+for (const name of ['A_TPose','Idle_Loop','Walk_Loop']) {
+  const clip = g.animations.find(a=>a.name===name); mixer.stopAllAction(); const a = mixer.clipAction(clip); a.play(); mixer.setTime(0); rep(name);
+  out[name].dur = clip.duration; out[name].tracks = clip.tracks.length; out[name].sample = clip.tracks.slice(0,4).map(t=>t.name);
+}
+const hier = []; get('DEF-hips').traverseAncestors(o=>hier.push(o.name+':'+o.type+':'+o.rotation.toArray().slice(0,3).map(v=>v.toFixed(2)) + ' s' + o.scale.x.toFixed(3)));
+out.hier = hier; out.children = get('DEF-hips').children.map(c=>c.name);
+out.spinechain = []; let o = get('DEF-head'); while (o && o.name!=='Rig') { out.spinechain.push(o.name); o = o.parent; }
+window.info = out; window.done = true;
+</script></body></html>
