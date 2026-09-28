@@ -18,7 +18,7 @@ const M = (...ps) => Object.assign({}, ...ps);
 // ---------------- poses ----------------
 const ARMS_DOWN = { leftUpperArm: [0, 0, -74], rightUpperArm: [0, 0, 74], leftLowerArm: [0, -8, 0], rightLowerArm: [0, 8, 0], leftHand: [0, 0, -6], rightHand: [0, 0, 6] };
 const FIST = {}; for (const s of ['left', 'right']) for (const f of ['Index', 'Middle', 'Ring', 'Little']) { FIST[s + f + 'Proximal'] = [0, 0, s === 'left' ? -80 : 80]; FIST[s + f + 'Intermediate'] = [0, 0, s === 'left' ? -95 : 95]; FIST[s + f + 'Distal'] = [0, 0, s === 'left' ? -60 : 60]; }
-Object.assign(FIST, { leftThumbProximal: [0, -30, -20], rightThumbProximal: [0, 30, 20], leftThumbDistal: [0, -30, 0], rightThumbDistal: [0, 30, 0] });
+Object.assign(FIST, { leftThumbMetacarpal: [-20, -25, -10], rightThumbMetacarpal: [-20, 25, 10], leftThumbProximal: [0, -45, -10], rightThumbProximal: [0, 45, 10], leftThumbDistal: [0, -55, 0], rightThumbDistal: [0, 55, 0] });
 const SOFT_HAND = {}; for (const k in FIST) SOFT_HAND[k] = FIST[k].map((v) => v * 0.3);
 
 // Rusana fighting stance (bladed, fists up, weight low) — right leg is the kicking leg (back)

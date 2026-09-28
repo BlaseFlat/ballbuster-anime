@@ -126,7 +126,7 @@ b2[..., 3] = np.where(shorts | top, 255, b2[..., 3])
 b2 = recolor_hair(b2)
 nails = (yy > 805) & (lum < 0.25) & ((np.abs(xx - 336) < 15) | (np.abs(xx - 687) < 15))
 nh = hsv(b2)[..., 2] / 255
-b2[nails, :3] = (bur[None, None] * (0.7 + 1.2 * nh[..., None]))[nails]
+# (nail tint dropped: it bled onto the back of the hands)
 save(b2, 'F00_000_00_Body_00.png')
 # outfit mask for runtime outfit swaps (js/outfits.js): R = top, G = shorts, B = trim (hems), 1024 px
 om = np.zeros((Hh, Ww, 4), np.float32); om[..., 3] = 255
