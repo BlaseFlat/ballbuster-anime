@@ -20,6 +20,7 @@ const mk = async (name, def) => { const v = await parseVRM(await fetchVRM('../..
 const who = q.get('c') || 'rusana';
 const partnerDef = q.get('g') ? GUYS.find(g => g.id === q.get('g')) || { base: q.get('g') } : null;
 const vA = await mk(who, GUYS.find(g => g.base === who && q.get('tint')));
+if (q.get('hideMat')) { const re = new RegExp(q.get('hideMat')); vA.scene.traverse((o) => { if (o.isMesh) for (const m of [].concat(o.material)) if (re.test(m.name)) { m.visible = false; } }); }
 const A = new Actor(vA, data); S.add(A.root);
 let B = null;
 if (partnerDef) { const vB = await mk(partnerDef.base, partnerDef.hair !== undefined ? partnerDef : null); B = new Actor(vB, data, {}); S.add(B.root); }

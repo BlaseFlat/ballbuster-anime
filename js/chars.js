@@ -41,8 +41,8 @@ export function recolorTexture(tex, hex, { strength = 1, keepSat = 0, mask = nul
   _c.setHex(hex); const tr = _c.r, tg = _c.g, tb = _c.b;
   const tl = 0.3 * tr + 0.59 * tg + 0.11 * tb + 1e-3;
   // reference luminance of the source: median-ish of opaque pixels
-  let sum = 0, cnt = 0; for (let i = 0; i < d.length; i += 16) if (d[i + 3] > 20) { sum += (0.3 * d[i] + 0.59 * d[i + 1] + 0.11 * d[i + 2]) / 255; cnt++; }
-  const ref = Math.max(0.05, sum / Math.max(1, cnt));
+  const smp = []; for (let i = 0; i < d.length; i += 16) if (d[i + 3] > 20) smp.push((0.3 * d[i] + 0.59 * d[i + 1] + 0.11 * d[i + 2]) / 255);
+  const ref = Math.max(0.05, smp.reduce((a, b) => a + b, 0) / Math.max(1, smp.length));   // mean luminance of opaque texels
   for (let i = 0; i < d.length; i += 4) {
     if (d[i + 3] < 4) continue;
     const r = d[i] / 255, gg = d[i + 1] / 255, b = d[i + 2] / 255;
@@ -84,14 +84,17 @@ export function stylize(vrm, { rimColor = 0xffe6d0, outline = 1.0 } = {}) {
 }
 
 export function tint(vrm, def) {
+  // def.hide: material-name regex to drop (e.g. AvatarSample_C's long wrap skirt -> slim trousers underneath)
+  const hide = def.hide ? new RegExp(def.hide) : null;
   vrm.scene.traverse((o) => {
     if (!o.isMesh) return;
+    if (hide) for (const m of [].concat(o.material)) if (hide.test(m.name)) m.visible = false;
     const mats = [].concat(o.material).map((m) => {
       let hex = null, opts = {};
       if (/HAIR/i.test(m.name) && def.hair !== undefined) { hex = def.hair; opts = { strength: 1 }; }
       for (const k in (def.tint || {})) if (m.name.includes(k)) { hex = def.tint[k]; opts = { strength: 0.9, mask: k === 'Tops' && def.base === 'guy_a' ? 'lowsat' : null }; }
       if (hex === null) return m;
-      const c = m.clone(); recolorMat(c, hex, opts); return c;
+      recolorMat(m, hex, opts); return m;   // in place (each NPC parses its own VRM): MToon clone() loses alpha-cutout state
     });
     o.material = Array.isArray(o.material) ? mats : mats[0];
   });

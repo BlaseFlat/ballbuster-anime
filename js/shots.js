@@ -72,6 +72,7 @@ export async function run(g, name) {
     P.pos.set(2, 0, -24); P.yaw = 0.3; step(g, 50); g.cam.yaw = 2.7; g.cam.dist = 6; g.cam.pitch = 0.35; step(g, 30);
   }
   { const e = document.querySelector('.pop'); if (e) { const r = e.getBoundingClientRect(); const cs = getComputedStyle(e); info.popRect = [r.x, r.y, r.width, r.height, cs.display, cs.visibility, cs.color, cs.fontSize, getComputedStyle(e.parentElement).display, getComputedStyle(e.parentElement).zIndex, document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2)?.className]; } info.plates = [...document.querySelectorAll('.plate')].map((e) => e.style.display + '|' + e.style.transform.slice(0, 60)); }
+  info.hidden = g.guys.map((x) => { let n = 0, names = []; x.actor.vrm.scene.traverse((o) => { if (o.isMesh) for (const m of [].concat(o.material)) { if (!m.visible) n++; if (/Bottoms/.test(m.name)) names.push(m.name + ':' + m.visible); } }); return x.def.id + ':' + n + ':' + names.join(','); });
   info.ms = Math.round(performance.now() - t0); info.dpr = g.R.dpr;
   window.info = info; window.done = true;
 }
