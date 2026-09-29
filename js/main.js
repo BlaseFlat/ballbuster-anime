@@ -215,7 +215,7 @@ class Game {
       this.updateCamera(rdt); this.fx.update(rdt, rdt); this.R.composer.render(); this.R.adapt(rdt); return;
     }
     if (this.dialogOpen) {
-      this.now += rdt; this.mira?.update(rdt); this.mira?.actor.update(rdt); this.rusana.update(rdt); this.world.update(this.now);
+      this.now += rdt; this.mira?.update(rdt); this.mira?.actor.update(rdt); this.mira?.lateUpdate?.(); this.rusana.update(rdt); this.world.update(this.now);
       this.sky.material.uniforms.time.value = this.now; this.R.grade.uniforms.time.value = this.now;
       this.updateCamera(rdt); this.fx.update(rdt, rdt); this.ui.update(rdt); this.R.composer.render(); this.R.adapt(rdt); return;
     }
@@ -235,14 +235,22 @@ class Game {
     }
     this.focusGuy = fg;
     if (this.comboT > 0 && (this.comboT -= dt) <= 0) this.breakCombo();
-    this.rusana.update(pdt); for (const g of this.guys) g.actor.update(dt); this.mira?.update(dt); this.mira?.actor.update(dt);
+    this.rusana.update(pdt); for (const g of this.guys) g.actor.update(dt); this.mira?.update(dt); this.mira?.actor.update(dt); this.mira?.lateUpdate?.();
     this.world.update(this.now); this.sky.material.uniforms.time.value = this.now; this.R.grade.uniforms.time.value = this.now;
     this.lights.follow(this.player.pos);
     this.updateCamera(rdt);
     this.fx.update(dt, rdt); this.ui.update(rdt);
     this.checkBoutique();
     const ar = this.world.areaAt(this.player.pos);
-    if (ar && ar !== this.area && this.started) { this.area = ar; this.ui.toast(this.world.areas[ar].name); }
+    if (ar && ar !== this.area && this.started) {
+      this.area = ar; this.ui.toast(this.world.areas[ar].name);
+      // district plot beats (once per area after meeting Mira)
+      const beat = this.mira?.def?.plot?.[ar];
+      if (beat && save.miraMet) {
+        this._plotShown = this._plotShown || {};
+        if (!this._plotShown[ar]) { this._plotShown[ar] = true; this.ui.toast('Мира', beat); this.ui.log(beat); }
+      }
+    }
     this.R.composer.render(); this.R.adapt(rdt);
   }
 }

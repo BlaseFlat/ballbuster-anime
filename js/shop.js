@@ -199,6 +199,7 @@ export class Shop {
     if ((o.figure || 0) >= 0.5) tags.push('<span class="tg fig">✦ Подчёркивает фигуру</span>');
     if (o.gloss >= 0.5) tags.push('<span class="tg">Глянец</span>');
     if (o.skirt) tags.push('<span class="tg">Юбка</span>'); if (o.jacket) tags.push('<span class="tg">Куртка</span>');
+    if (o.hideShoes) tags.push('<span class="tg">Своя обувь</span>');
     if (o.rank) tags.push(`<span class="tg rk">Ранг «${RANKS[o.rank][1]}»</span>`);
     E.tags.innerHTML = tags.join('');
     const own = save.has(o.id), eq = save.outfit === o.id, lock = !own && save.locked(o.id), poor = !own && save.money < o.price;

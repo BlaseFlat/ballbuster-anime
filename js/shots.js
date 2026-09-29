@@ -81,6 +81,13 @@ export async function run(g, name) {
     if (Q.has('dist')) g.shop.orb.tDist = g.shop.orb.dist = +Q.get('dist');
     if (Q.has('pitch')) g.shop.orb.tPitch = g.shop.orb.pitch = +Q.get('pitch');
     if (name === 'outfit') { document.getElementById('shop').style.display = 'none'; g.shop.orb.tDist = g.shop.orb.dist = +(Q.get('dist') || 2.9); }
+    if (Q.get('view') === 'feet') {
+      document.getElementById('shop').style.display = 'none';
+      const foot = g.rusana.humanoid?.getNormalizedBoneNode?.('rightFoot') || g.rusana.vrm.humanoid.getNormalizedBoneNode('rightFoot');
+      const fp = foot.getWorldPosition(V(0,0,0));
+      g.shopMode = true; // keep shop lighting? actually leave orb
+      g.camOverride = { pos: V(fp.x + 0.55, fp.y + 0.35, fp.z + 0.85), look: V(fp.x, fp.y + 0.05, fp.z), fov: 32 };
+    }
     step(g, 40); await new Promise((r) => setTimeout(r, 300)); step(g, 2);
     info.outfit = g.rusana.vrm.userData.outfit; info.money = save.money; info.owned = save.owned; info.eq = save.outfit;
     info.vis = []; g.rusana.vrm.scene.traverse((o) => { if (o.isMesh) for (const m of [].concat(o.material)) if (/CLOTH/.test(m.name) && !m.isOutline) info.vis.push(m.name.replace('F00_', '') + ':' + m.visible); });
@@ -145,8 +152,10 @@ export async function run(g, name) {
     step(g, 20);
     info.assist = { state: g.mira.state, held: d.held, open: g.now < (d.openUntil || 0), guard: d.guard(), miraPos: g.mira.pos.toArray().map((v)=>+v.toFixed(2)) };
     if (mode === 'holdpose') {
-      const mid = d.pos.clone().add(g.mira.pos).multiplyScalar(0.5);
-      g.camOverride = { pos: V(mid.x - 0.2, 1.4, mid.z + 3.2), look: V(mid.x, 1.0, mid.z), fov: 40 }; step(g, 2);
+      // close on wrists so IK grab is visible
+      const wh = d.actor.vrm.humanoid.getNormalizedBoneNode('leftHand').getWorldPosition(V(0,0,0));
+      g.camOverride = { pos: V(wh.x - 1.1, wh.y + 0.25, wh.z + 1.6), look: V(wh.x, wh.y + 0.05, wh.z), fov: 36 }; step(g, 4);
+      info.ik = { miraState: g.mira.state, held: d.held };
     } else if (mode === 'ko' || mode === 'hold') {
       // kick while held → expect perfect/clean drop
       P.request('kick'); let k = 0; while (!P.resolved && k++ < 60) step(g, 1);

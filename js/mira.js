@@ -68,6 +68,69 @@ export class Mira {
     }
   }
 
+  /** After Actor mixer + vrm.update — wrist snap IK and look-at so they aren't overwritten. */
+  lateUpdate() {
+    const A = this.actor, vrm = A.vrm, guy = this.assist;
+    if (this.state === 'hold' && guy && !guy.out && !guy.dropped) this._grabIK(guy);
+    if ((this.state === 'distract' || this.state === 'hold') && guy && vrm.lookAt) {
+      const hp = guy.headPos(new THREE.Vector3());
+      try { vrm.lookAt.lookAt(hp); } catch (e) {}
+    }
+  }
+
+  /** CCD IK: rotate joints so the tip approaches worldTarget (axis-agnostic). */
+  _ccd(bones, target, iters = 8) {
+    if (!bones.length) return;
+    const tip = bones[bones.length - 1];
+    const bonePos = new THREE.Vector3(), tipPos = new THREE.Vector3();
+    const toTip = new THREE.Vector3(), toTarget = new THREE.Vector3();
+    const q = new THREE.Quaternion(), pq = new THREE.Quaternion(), inv = new THREE.Quaternion();
+    for (let i = 0; i < iters; i++) {
+      for (let b = bones.length - 2; b >= 0; b--) {
+        const bone = bones[b]; if (!bone?.parent) continue;
+        bone.updateWorldMatrix(true, true);
+        tip.updateWorldMatrix(true, false);
+        bonePos.setFromMatrixPosition(bone.matrixWorld);
+        tipPos.setFromMatrixPosition(tip.matrixWorld);
+        toTip.copy(tipPos).sub(bonePos); if (toTip.lengthSq() < 1e-10) continue; toTip.normalize();
+        toTarget.copy(target).sub(bonePos); if (toTarget.lengthSq() < 1e-10) continue; toTarget.normalize();
+        q.setFromUnitVectors(toTip, toTarget);
+        bone.parent.getWorldQuaternion(pq);
+        inv.copy(pq).invert();
+        // world Δq → local: inv * q * pq, then premultiply onto bone
+        const local = inv.multiply(q).multiply(pq);
+        bone.quaternion.premultiply(local);
+      }
+    }
+  }
+
+  _grabIK(guy) {
+    const mh = this.actor.vrm.humanoid, gh = guy.actor.vrm.humanoid;
+    const chest = mh.getNormalizedBoneNode('chest') || mh.getNormalizedBoneNode('spine');
+    const cPos = chest ? chest.getWorldPosition(new THREE.Vector3()) : this.pos.clone().setY(this.pos.y + 1.15);
+    // 1) tug guy wrists behind toward Mira (reinforce pin)
+    for (const side of ['left', 'right']) {
+      const chain = ['UpperArm', 'LowerArm', 'Hand'].map((s) => gh.getNormalizedBoneNode(side + s)).filter(Boolean);
+      if (chain.length < 2) continue;
+      const pull = cPos.clone();
+      const lat = side === 'left' ? -0.14 : 0.14;
+      pull.x += Math.cos(guy.yaw) * lat; pull.z -= Math.sin(guy.yaw) * lat;
+      pull.y -= 0.05;
+      this._ccd(chain, pull, 6);
+    }
+    guy.actor.vrm.scene.updateMatrixWorld(true);
+    // 2) Mira hands reach those wrists
+    for (const side of ['left', 'right']) {
+      const gHand = gh.getNormalizedBoneNode(side + 'Hand');
+      const chain = ['UpperArm', 'LowerArm', 'Hand'].map((s) => mh.getNormalizedBoneNode(side + s)).filter(Boolean);
+      if (!gHand || chain.length < 2) continue;
+      const goal = gHand.getWorldPosition(new THREE.Vector3());
+      goal.lerp(cPos, 0.08); // slight overlap into the grip
+      this._ccd(chain, goal, 10);
+    }
+    this.actor.vrm.scene.updateMatrixWorld(true);
+  }
+
   _idleOrReturn(dt) {
     const A = this.actor, P = this.g.player;
     if (this.state === 'return') {
@@ -156,7 +219,7 @@ export class Mira {
 
   _beginHold(guy) {
     this.state = 'hold'; this.holdT = HOLD_DUR; this._pending = null;
-    guy.held = true; guy.heldBy = this;
+    guy.held = true; guy.heldBy = this; guy._wasHeld = true;
     guy.guardUntil = 0; guy.guardLv = 0; guy.guardAt = 1e9;
     if (guy.act === 'windup' || guy.act === 'punch' || guy.act === 'guard') guy.setAct(null);
     guy.actor.play('held', { fade: 0.1, restart: true });
@@ -280,6 +343,10 @@ export class Mira {
         box.textContent = 'Мира: «Один идеальный ап-кик или колено — и он падает. Скользом не считается. Не долби воздухом».';
         opts.innerHTML = ''; add('Поняла', () => this.render('hub')); add('Пока', () => this.close(), 'ghost');
       });
+      add('Про район', () => {
+        box.textContent = 'Мира: «Торговая — наша. Во дворе трусы и Стас. У «Неона» — Макс, мнит себя хозяином. На крыше Кирилл. Зови R/T в бою — держу крепко за запястья».';
+        opts.innerHTML = ''; add('Поняла', () => this.render('hub')); add('Пока', () => this.close(), 'ghost');
+      });
       add('Пока', () => this.close(), 'ghost');
     } else if (mode === 'quests') {
       const lines = MIRA.quests.map((q) => {
@@ -305,6 +372,8 @@ export class Mira {
   onWin(guy, grade) {
     save.questAdd('cleanup', 1);
     if (grade === 'perfect') save.questAdd('precision', 1);
+    if (guy._wasHeld || guy.held) save.questAdd('teamwork', 1);
+    if (guy.def?.id === 'maks') save.questAdd('neon_king', 1);
     if (this.assist === guy) { this._release(); this.state = 'return'; this.assist = null; }
   }
   onBuy() { save.questAdd('silk', 1); }

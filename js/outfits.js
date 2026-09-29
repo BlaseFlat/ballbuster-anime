@@ -26,17 +26,17 @@ export const OUTFITS = [
     desc: 'Укороченный бомбер поверх топа-трубы, розовая плиссе-мини и гольфы.' },
   { id: 'fishnet', ru: 'Сетка', style: 'Кожаные микрошорты + сетка', price: 260, rank: 1, tex: 'fishnet_street', gloss: 0.6, shoes: 0x141217, figure: 0.2,
     desc: 'Кожаные микрошорты с ремнём, колготки-сетка и кроп на тонких бретелях.' },
-  { id: 'beach', ru: 'Пляж', style: 'Бикини', price: 280, rank: 0, tex: 'beach', shoes: 0xfff1e6, figure: 0.5, tie: 0xff5d8f,
+  { id: 'beach', ru: 'Пляж', style: 'Бикини · сандалии', price: 280, rank: 0, tex: 'beach', shoes: 0xfff1e6, hideShoes: true, figure: 0.5, tie: 0xff5d8f,
     desc: 'Ярко-розовое бикини на завязках. Пляж где-то рядом, наверное.' },
-  { id: 'bodycon', ru: 'Мини-платье', style: 'Платье-бандо по фигуре', price: 340, rank: 1, tex: 'bodycon', gloss: 0.45, skirt: 0xc8102e, shoes: 0xc8102e, figure: 0.85,
+  { id: 'bodycon', ru: 'Мини-платье', style: 'Платье-бандо · каблуки', price: 340, rank: 1, tex: 'bodycon', gloss: 0.45, skirt: 0xc8102e, shoes: 0xc8102e, hideShoes: true, figure: 0.85,
     desc: 'Красное платье-бандо: лиф в обтяжку с драпировкой, тонкий пояс и короткая юбка. Фигура — главный аргумент.' },
-  { id: 'biker', ru: 'Байкерша', style: 'Кожаный халтер + шорты + ботфорты', price: 380, rank: 1, tex: 'biker', gloss: 0.8, shoes: 0x151213, figure: 0.3,
+  { id: 'biker', ru: 'Байкерша', style: 'Кожаный халтер + шорты + ботфорты', price: 380, rank: 1, tex: 'biker', gloss: 0.8, shoes: 0x151213, hideShoes: true, figure: 0.3,
     desc: 'Кожаный топ-халтер на молнии, шорты с ремнём и высокие сапоги.' },
-  { id: 'corset', ru: 'Корсет', style: 'Корсет + мини + чулки', price: 420, rank: 2, tex: 'corset', gloss: 0.5, skirt: 0x1b1820, shoes: 0x151116, figure: 0.7,
+  { id: 'corset', ru: 'Корсет', style: 'Корсет + мини + чулки · каблуки', price: 420, rank: 2, tex: 'corset', gloss: 0.5, skirt: 0x1b1820, shoes: 0x151116, hideShoes: true, figure: 0.7,
     desc: 'Винный корсет со шнуровкой, чёрная мини-юбка и чулки с кружевом.' },
-  { id: 'latex', ru: 'Латекс', style: 'Глянцевый кэтсьют', price: 520, rank: 2, tex: 'latex', gloss: 1.0, shoes: 0x0d0c10, figure: 1.0,
+  { id: 'latex', ru: 'Латекс', style: 'Глянцевый кэтсьют · каблуки', price: 520, rank: 2, tex: 'latex', gloss: 1.0, shoes: 0x0d0c10, hideShoes: true, figure: 1.0,
     desc: 'Чёрный латексный комбинезон с молнией. Блестит, скрипит, сидит как вторая кожа.' },
-  { id: 'champion', ru: 'Чемпионка', style: 'Боди с высоким вырезом + ботфорты', price: 650, rank: 3, tex: 'champion', gloss: 1.0, shoes: 0x121015, figure: 1.0,
+  { id: 'champion', ru: 'Чемпионка', style: 'Боди с высоким вырезом + ботфорты', price: 650, rank: 3, tex: 'champion', gloss: 1.0, shoes: 0x121015, hideShoes: true, figure: 1.0,
     desc: 'Чёрно-золотое глянцевое боди, длинные перчатки и сапоги выше колена. Для королевы района.' },
 ];
 // ids from v1 saves (recolour-era) -> current outfits
@@ -186,13 +186,18 @@ export async function applyOutfit(vrm, id) {
       mt.visible = !!o.skirt;
       if (o.skirt) { const t = (src) => (src && o.skirt !== true ? recolorTexture(src, o.skirt, { strength: 0.9 }) : src); mt.map = t(os.map); mt.shadeMultiplyTexture = t(os.shadeMultiplyTexture); }
     } else if (/Shoes_01_CLOTH/.test(n)) {
+      if (o.hideShoes) { mt.visible = false; continue; }
+      mt.visible = true;
       mt.map = o.shoes ? recolorTexture(os.map, o.shoes, { strength: 0.85 }) : os.map;
       mt.shadeMultiplyTexture = o.shoes && os.shadeMultiplyTexture ? recolorTexture(os.shadeMultiplyTexture, o.shoes, { strength: 0.85 }) : os.shadeMultiplyTexture;
     } else continue;
     mt.needsUpdate = true;
   }
-  // body shape: fuller figure for the hugging outfits
-  for (const m of meshes) { const k = m.morphTargetDictionary?.Figure; if (k !== undefined) m.morphTargetInfluences[k] = o.figure || 0; }
+  // hide shoe meshes entirely when footwear is painted on the body (sandals / heels / boots)
+  for (const m of meshes) {
+    if (/Shoes/i.test(m.name)) m.visible = !o.hideShoes;
+    const k = m.morphTargetDictionary?.Figure; if (k !== undefined) m.morphTargetInfluences[k] = o.figure || 0;
+  }
   vrm.userData = vrm.userData || {}; vrm.userData.outfit = o.id;
   return o;
 }

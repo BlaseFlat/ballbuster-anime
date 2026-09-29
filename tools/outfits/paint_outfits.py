@@ -119,6 +119,30 @@ def bottoms_region(y_waist, leg_len_front, leg_len_back=None, highcut=0.0):
     return BODY_OK & ~ARMS & ~isp(LLEG) & (Y < y_waist) & (Y > hem)
 def leg_region(y_top, y_bot=ANKLE):
     return LEG & (Y < y_top) & (Y > y_bot)
+
+def footwear_sandals(p, col=0xfff1e6, strap=0xff5d8f):
+    """Flat sandals: pale sole covering FOOT + pink straps (beach). Visible once Shoes mesh is hidden."""
+    foot = isp(FOOT)
+    # full foot coverage so default sock/sneaker paint is gone
+    p.fill(foot, col, grain=3)
+    # darker sole underside
+    p.fill(foot & (Y < 0.04), 0xe8d4c4, grain=2)
+    # toe bar + ankle strap + side connector
+    p.fill(foot & (np.abs(Y - 0.055) < 0.01) & (Z < 0.025), strap, grain=2)
+    p.fill(foot & (np.abs(Y - 0.095) < 0.008), strap, grain=2)
+    p.line(LEG & (Y < ANKLE + 0.025) & (Y > ANKLE - 0.005), strap)
+
+def footwear_heels(p, col=0x151116, shaft=0.0, gloss=0.75):
+    """Stiletto / pump painted on FOOT (+ optional short shaft up ankle)."""
+    foot = isp(FOOT)
+    # shoe body covering foot top + sole
+    shoe = foot | (LEG & (Y < ANKLE + 0.01 + shaft) & (Y > 0.02))
+    p.fill(shoe, col, gloss=gloss, shine=0.12, grain=2)
+    # darker sole edge
+    p.line(foot & (Y < 0.035) & (np.abs(NZ) > 0.3), max(0, col - 0x101010) if isinstance(col, int) else col)
+    # thin heel bar suggestion on back of foot
+    p.fill(foot & (Z > 0.01) & (Y < 0.08) & (AX < 0.03), col, gloss=gloss)
+
 def fishnet(v, cell=0.011, width=0.0013, col=(18, 16, 20)):
     u1 = (ARC + Y) / cell; u2 = (ARC - Y) / cell
     d = np.minimum(np.abs(u1 - np.round(u1)), np.abs(u2 - np.round(u2))) * cell
@@ -199,7 +223,8 @@ def beach():
     p.fill(bot, 0xff5d8f, grain=4)
     p.line(band(bot, HIPY - 0.02 - 0.004, 0.004), 0xffd1df)
     p.line(isp(HIPS, SPINE) & band(Y > 0, HIPY - 0.023, 0.0035) & (Y > 0), 0xff5d8f)      # side ties
-    return p, dict(shoes=0xfff1e6, tie=0xff5d8f)
+    footwear_sandals(p, 0xfff1e6, 0xff5d8f)
+    return p, dict(shoes=0xfff1e6, tie=0xff5d8f, hideShoes=True)
 
 @outfit
 def bodycon():
@@ -210,7 +235,8 @@ def bodycon():
     for dy in np.arange(0.0, 0.2, 0.03): p.mix(band(dress & TORSO, WAIST - 0.06 + dy, 0.0015) & (Y < UNDER - 0.01), 0x8e0b22, 0.5)   # ruching
     p.line(band(dress, BUST + 0.045 - 0.004, 0.004) & (fb < 0.5), 0x7e0a1d)
     p.line(band(dress, WAIST, 0.004), 0x1a1016, gloss=0.8)          # thin black belt
-    return p, dict(shoes=0xc8102e, tie=0xc8102e, figure=0.85, meshes={'skirt': 0xc8102e})
+    footwear_heels(p, 0xc8102e, shaft=0.02, gloss=0.55)
+    return p, dict(shoes=0xc8102e, tie=0xc8102e, figure=0.85, hideShoes=True, meshes={'skirt': 0xc8102e})
 
 @outfit
 def biker():
@@ -225,7 +251,7 @@ def biker():
     p.fill(boots, 0x151213, gloss=0.7, shine=0.15)
     p.line(boots & band(Y > 0, KNEE + 0.125, 0.005), 0x3a3336)
     p.line(boots & (np.abs(LANG) < 0.035) & (Y > ANKLE), 0xb9b9c0, gloss=1)   # side zips
-    return p, dict(shoes=0x151213, tie=0x1b1718)
+    return p, dict(shoes=0x151213, tie=0x1b1718, hideShoes=True)
 
 @outfit
 def corset():
@@ -245,7 +271,8 @@ def corset():
     p.fill(lt, 0x151116, grain=6)
     p.line(lt & (np.abs(((ARC / 0.012) % 1) - 0.5) < 0.18) & (Y > KNEE + 0.145), 0x3d3440)   # lace scallops
     p.line(ULEG & (np.abs(LANG + math.pi / 2) < 0.03) & (Y > KNEE + 0.15) & (Y < HIPY), 0x16121a)  # garter straps
-    return p, dict(shoes=0x151116, tie=0x5a0d1f, figure=0.7, meshes={'skirt': 0x1b1820})
+    footwear_heels(p, 0x151116, shaft=0.025, gloss=0.7)
+    return p, dict(shoes=0x151116, tie=0x5a0d1f, figure=0.7, hideShoes=True, meshes={'skirt': 0x1b1820})
 
 @outfit
 def latex():
@@ -256,7 +283,8 @@ def latex():
     p.line(suit & (np.abs(X) < 0.0028) & (fb < 0.25) & (Y > WAIST - 0.04) & (Y < NECK), 0xa7a7b2, gloss=1)
     p.line(suit & (np.abs(X) < 0.006) & (fb < 0.25) & (np.abs(Y - (WAIST - 0.045)) < 0.008), 0xc9c9d2, gloss=1)   # zip pull   # front zip
     p.line(band(suit, NECK - 0.012, 0.005), 0x2a2830, gloss=0.6)
-    return p, dict(shoes=0x0d0c10, tie=0x0d0c10, figure=1.0)
+    footwear_heels(p, 0x0d0c10, shaft=0.03, gloss=1.0)
+    return p, dict(shoes=0x0d0c10, tie=0x0d0c10, figure=1.0, hideShoes=True)
 
 @outfit
 def champion():
@@ -273,7 +301,7 @@ def champion():
     gl = isp(LARM) & (AX > 0.36)
     p.fill(gl, 0x121015, gloss=0.9, shine=0.15)
     p.line(gl & (np.abs(AX - 0.365) < 0.004), gold, gloss=1)
-    return p, dict(shoes=0x121015, tie=gold, figure=1.0)
+    return p, dict(shoes=0x121015, tie=gold, figure=1.0, hideShoes=True)
 
 for name, fn in OUT.items():
     if only and name not in only: continue

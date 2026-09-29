@@ -66,6 +66,19 @@ export class Player {
     g.sfx.whoosh(this.move === 'knee' ? 0.8 : 1.1);
     if (this.move === 'finisher') g.startFinisher(this.target);
     this.combatT = 4;
+    // skirt mesh clips through raised thighs on high kicks — hide for the strike
+    this._skirtHide = null;
+    if (/kick|roundhouse|axe|heel|jumpknee|finisher/.test(this.move)) {
+      this._skirtHide = [];
+      this.actor.vrm.scene.traverse((ob) => {
+        if (ob.isMesh && /Bottoms_01/.test(ob.name) && ob.visible) { this._skirtHide.push(ob); ob.visible = false; }
+      });
+    }
+  }
+  _restoreSkirt() {
+    if (!this._skirtHide) return;
+    for (const ob of this._skirtHide) ob.visible = true;
+    this._skirtHide = null;
   }
   dodge() {
     if (this.dodgeCd > 0 || this.state === 'victory' || this.state === 'caught') return;
@@ -111,6 +124,7 @@ export class Player {
     this.t += dt; this.dodgeCd -= dt; this.iframes -= dt; this.combatT -= dt;
     let tv = new THREE.Vector3(), faceYaw = null, accel = PLAYER.accel;
     if (this.state === 'move') {
+      if (this._skirtHide) this._restoreSkirt();
       if (input.moveLen > 0.05) {
         const sp = input.run ? PLAYER.run : PLAYER.walk;
         tv.set(Math.sin(input.moveYaw), 0, Math.cos(input.moveYaw)).multiplyScalar(sp * Math.min(1, input.moveLen)); faceYaw = input.moveYaw;
@@ -133,8 +147,8 @@ export class Player {
         tv.set(dx / d * v, 0, dz / d * v); accel = 60;
       }
       if (!this.resolved && this.t >= def.contact) this.resolve();
-      if (this.queue && this.t >= def.contact + def.recover * 0.6) { const q = this.queue; this.queue = null; this.state = 'move'; this.begin(q); }
-      else if (this.t >= A.dur / Math.max(0.1, A.cur.timeScale) - 0.02) { this.state = 'move'; if (this.move === 'finisher') g.endFinisher(); }
+      if (this.queue && this.t >= def.contact + def.recover * 0.6) { const q = this.queue; this.queue = null; this._restoreSkirt(); this.state = 'move'; this.begin(q); }
+      else if (this.t >= A.dur / Math.max(0.1, A.cur.timeScale) - 0.02) { this._restoreSkirt(); this.state = 'move'; if (this.move === 'finisher') g.endFinisher(); }
     } else if (this.state === 'dodge') {
       const k = Math.max(0, 1 - this.t / PLAYER.dodgeTime);
       tv.copy(this.dodgeDir).multiplyScalar(PLAYER.dodgeDist / PLAYER.dodgeTime * 1.6 * k); accel = 60;
