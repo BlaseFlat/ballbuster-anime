@@ -189,9 +189,9 @@ export class Guy {
       want = [away.x, away.z]; speed = GUY_RUN * this.trait.speed; face = Math.atan2(away.x, away.z);
       if (dist > 11 || this.fleeT < 0) { this.mode = 'alert'; if (this.sayCd <= 0) this.say(pick(this.trait.lines)); }
     } else if (this.held) {
-      // Mira holding: struggle in place, no punch/guard
+      // Mira holding: arms pinned, struggle in place, no punch/guard
       face = toP; this.vel.multiplyScalar(0.5);
-      if (A.curName !== 'flinch' && A.curName !== 'guard') A.play('flinch', { fade: 0.15 });
+      if (A.curName !== 'held') A.play('held', { fade: 0.12 });
       A.setExpr('surprised', 0.5); A.setExpr('angry', 0.4);
     } else if (this.mode === 'alert') {
       face = toP;

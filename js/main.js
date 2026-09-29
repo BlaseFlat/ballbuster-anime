@@ -63,7 +63,7 @@ class Game {
   start() {
     this.started = true; this.sfx.init(); document.body.classList.add('playing');
     this.ui.toast('Неоновый район', 'Торговая улица'); this.area = 'street';
-    this.ui.hint('J/K — удар · E — Мира · R — Мира держит · T — Мира отвлекает · B — бутик. Один точный удар — и он не встаёт.', 8);
+    this.ui.hint('J/K/U — приёмы · F — добивание · R/T — Мира · B — бутик (наряды и зал). Один точный удар — и он не встаёт.', 8);
   }
   // ------------------------------------------------ combat glue
   onStrike(guy, move, res, info) {
@@ -137,8 +137,12 @@ class Game {
       if (e.code === 'KeyE') { this.mira?.tryTalk(); return; }
       if (e.code === 'KeyR') { this.mira?.requestAssist('hold'); return; }
       if (e.code === 'KeyT') { this.mira?.requestAssist('distract'); return; }
-      if (e.code === 'KeyJ') this.player.request('kick');
-      if (e.code === 'KeyK') this.player.request('knee');
+      if (e.code === 'KeyJ' || e.code === 'KeyK' || e.code === 'KeyU') {
+        const slot = e.code === 'KeyJ' ? 0 : e.code === 'KeyK' ? 1 : 2;
+        const id = save.slotMove(slot);
+        if (!id) this.ui.hint(slot === 2 ? 'Слот U пуст — купи приём в «Шёлке»' : 'Слот пуст');
+        else this.player.request(id);
+      }
       if (e.code === 'KeyF') this.player.request('finisher');
       if (e.code === 'Space') { this.player.dodge(); e.preventDefault(); }
       if (e.code === 'KeyM') this.ui.hint(this.sfx.toggle() ? 'Звук выключен' : 'Звук включён');

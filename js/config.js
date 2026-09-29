@@ -11,12 +11,30 @@ export const PLAYER = {
 // Strike definitions: clip name, contact time (s into the clip), ideal root-to-root distance at contact,
 // recovery (s after contact before the next strike may start), damage multiplier.
 export const STRIKES = {
-  kick: { clip: 'r_kick', contact: 0.25, dist: 0.74, recover: 0.22, dmg: 1.0, ru: 'Ап-кик' },
-  knee: { clip: 'r_knee', contact: 0.22, dist: 0.42, recover: 0.22, dmg: 1.15, ru: 'Колено' },
-  lowkick: { clip: 'r_lowkick', contact: 0.22, dist: 0.62, recover: 0.2, dmg: 1.0, ru: 'Низкий кик' },
-  stomp: { clip: 'r_stomp', contact: 0.3, dist: 0.5, recover: 0.3, dmg: 1.3, ru: 'Стопой' },
-  finisher: { clip: 'r_finisher', contact: 0.46, dist: 0.74, recover: 0.5, dmg: 2.2, ru: 'Добивание' },
+  kick:      { clip: 'r_kick',       contact: 0.25, dist: 0.74, recover: 0.22, dmg: 1.0,  ru: 'Ап-кик' },
+  knee:      { clip: 'r_knee',       contact: 0.22, dist: 0.42, recover: 0.22, dmg: 1.15, ru: 'Колено' },
+  roundhouse:{ clip: 'r_roundhouse', contact: 0.30, dist: 0.92, recover: 0.30, dmg: 1.05, ru: 'Круговой' },
+  axe:       { clip: 'r_axe',        contact: 0.34, dist: 0.68, recover: 0.34, dmg: 1.2,  ru: 'Топор' },
+  jumpknee:  { clip: 'r_jumpknee',   contact: 0.24, dist: 0.55, recover: 0.28, dmg: 1.25, ru: 'Прыжок-колено' },
+  heel:      { clip: 'r_heel',       contact: 0.28, dist: 0.80, recover: 0.26, dmg: 1.1,  ru: 'Каблук' },
+  lowkick:   { clip: 'r_lowkick',    contact: 0.22, dist: 0.62, recover: 0.2,  dmg: 1.0,  ru: 'Низкий кик' },
+  stomp:     { clip: 'r_stomp',      contact: 0.3,  dist: 0.5,  recover: 0.3,  dmg: 1.3,  ru: 'Стопой' },
+  finisher:  { clip: 'r_finisher',   contact: 0.46, dist: 0.74, recover: 0.5,  dmg: 2.2,  ru: 'Добивание' },
 };
+
+// Shop-buyable standing moves (loadout slots J / K / U). Contextual lowkick/stomp/finisher always free.
+export const MOVES = [
+  { id: 'kick',       ru: 'Ап-кик',        style: 'Быстрый · средний',     price: 0,   rank: 0, desc: 'Классика. Быстрый ап-кик в пах. Стартовый приём.' },
+  { id: 'knee',       ru: 'Колено',         style: 'Клинч · мощный',        price: 0,   rank: 0, desc: 'Вплотную. Чуть сильнее, узкое окно.' },
+  { id: 'heel',       ru: 'Каблук',         style: 'Дальний · точный',      price: 120, rank: 0, desc: 'Удар каблуком с дистанции. Чуть длиннее замах.' },
+  { id: 'roundhouse', ru: 'Круговой',       style: 'Дальний · шире угол',   price: 160, rank: 0, desc: 'Круговой в пах. Достаёт издалека, прощает угол, дольше контакт.' },
+  { id: 'jumpknee',   ru: 'Прыжок-колено',  style: 'Рывок · высокий урон',  price: 200, rank: 1, desc: 'Подскок и колено. Сильнее, но заметный замах.' },
+  { id: 'axe',        ru: 'Топор',          style: 'Риск · максимальный',   price: 260, rank: 1, desc: 'Рубящий сверху вниз. Долгий замах — легко словить блок, но бьёт жёстко.' },
+];
+export const moveById = (id) => MOVES.find((m) => m.id === id) || MOVES[0];
+export const LOADOUT_KEYS = ['KeyJ', 'KeyK', 'KeyU']; // 3 slots
+export const LOADOUT_LABELS = ['J', 'K', 'U'];
+
 
 export const COMBAT = {
   reach: 3.2,            // farthest target J/K will dash to (m, root-to-root)

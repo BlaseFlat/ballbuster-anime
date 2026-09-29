@@ -106,6 +106,28 @@ export async function run(g, name) {
     while (!d.out && performance.now() - t0 < 5000) { step(g, 3); await new Promise((r) => setTimeout(r, 50)); }
     info.after = { out: d.out, level: d.level, dropped: d.dropped, state: d.state, money: (await import('./outfits.js')).save.money, grade: g.stats };
     g.camOverride = { pos: V(-13.0, 1.2, 3.4), look: V(-13.2, 0.55, 0), fov: 40 }; step(g, 2);
+  } else if (name === 'shopmoves') {
+    const { save } = await import('./outfits.js');
+    save.earn(500); save.miraMeet(); save.fameUp(50);
+    g.guys.forEach((x) => place(x, 30, 30, 0));
+    g.shop.enter(); g.shop.setTab('moves');
+    g.shop.selectMove(Q.get('o') || 'heel', true);
+    if (Q.has('buy')) { g.shop.action(); g.shop.equipTo(2); }
+    step(g, 35); await new Promise((r) => setTimeout(r, 200)); step(g, 2);
+    info.tab = g.shop.tab; info.sel = g.shop.sel; info.loadout = save.loadout; info.money = save.money;
+  } else if (name === 'newstrike') {
+    const { save } = await import('./outfits.js');
+    const move = Q.get('o') || 'roundhouse';
+    if (!save.hasMove(move)) { save.buyMove(move) || (save.earn(300), save.buyMove(move)); }
+    save.equipMove(0, move);
+    const d = G('dima'); g.guys.forEach((x) => { if (x !== d) place(x, 30, 30, 0); });
+    P.pos.set(-14, 0, 0); P.yaw = Math.PI / 2; place(d, -12.55, 0, -Math.PI / 2);
+    d.mode = 'alert'; d.met = true; d.decideT = 99; d.trait = { ...d.trait, guard: 0, dodge: 0 };
+    step(g, 25); P.request(move);
+    let k = 0; while (!P.resolved && k++ < 70) step(g, 1);
+    step(g, +(Q.get('n') || 6), 1 / 60);
+    info.move = move; info.grade = g.stats._lastGrade; info.out = d.out; info.dropped = d.dropped;
+    g.camOverride = { pos: V(-13.0, 1.25, 3.5), look: V(-13.2, 0.85, 0), fov: 40 }; step(g, 2);
   } else if (name === 'assist') {
     // Mira hold/distract + KO. ?shot=assist&mode=hold|distract|ko
     const { save } = await import('./outfits.js');

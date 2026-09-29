@@ -126,3 +126,15 @@ body.inshop #hint,body.inshop #toast{z-index:40;position:fixed}
 body.inshop #dialog,body:has(#dialog.show) #keys{opacity:.3}
 
 #banner.show.mira{color:#7ef0d8;text-shadow:0 0 18px #2ec4b6,3px 3px 0 #1c1426;font-size:42px}
+
+#shopTabs{display:flex;gap:6px;margin-left:12px}
+#shopTabs button{background:rgba(255,255,255,.1);padding:6px 12px;font-size:13px;font-weight:700;border:2px solid transparent;border-radius:10px;color:#fff;cursor:pointer}
+#shopTabs button.on{background:rgba(255,79,139,.35);border-color:var(--pink)}
+#shopLoadout{margin-top:12px}
+#shopLoadout .lbl{font-size:11px;letter-spacing:.12em;opacity:.7;margin-bottom:6px}
+#shopSlots{display:flex;gap:6px}
+#shopSlots .slot{flex:1;background:rgba(0,0,0,.35);border:2px solid rgba(255,255,255,.15);border-radius:10px;padding:8px 6px;cursor:pointer;color:#fff;font:inherit;text-align:center}
+#shopSlots .slot i{display:block;font-style:normal;font-size:11px;color:var(--gold);margin-bottom:2px}
+#shopSlots .slot b{font-size:13px}
+#shopSlots .slot.on{border-color:var(--pink);box-shadow:0 0 10px rgba(255,79,139,.4)}
+#shopSlots .slot:hover{border-color:rgba(255,95,162,.7)}

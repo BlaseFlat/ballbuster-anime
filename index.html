@@ -3,11 +3,11 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="bba-version" content="0.3.1">
+<meta name="bba-version" content="0.4.0">
 <meta name="rating" content="adult">
 <title>Боллбастер: Неоновый район (21+)</title>
 <link rel="icon" href="data:,">
-<link rel="stylesheet" href="css/style.css?v=0.3.1">
+<link rel="stylesheet" href="css/style.css?v=0.4.0">
 <script type="importmap">{"imports":{"three":"./vendor/three/three.module.js","three/addons/":"./vendor/three/addons/","@pixiv/three-vrm":"./vendor/three-vrm/three-vrm.module.js"}}</script>
 </head>
 <body>
@@ -19,7 +19,7 @@
   <div id="combo"><span id="comboN">0</span><span id="comboL">КОМБО</span></div>
   <div id="focus"><div class="lbl">Фокус <span>F — добивание</span></div><div class="fbar"><div id="focusFill"></div></div></div>
   <div id="log"></div>
-  <div id="keys">J/ЛКМ ап-кик · K/ПКМ колено · Пробел уклон · F добивание · E Мира · R держит · T отвлекает · B бутик · H помощь</div>
+  <div id="keys">J/K/U приёмы · F добивание · Пробел уклон · E Мира · R держит · T отвлекает · B бутик · H помощь</div>
 </div>
 <div id="plates"></div>
 <div id="popups"></div>
@@ -66,9 +66,13 @@
   <div class="btns"><button id="helpClose" class="primary">Продолжить</button></div></div></div>
 
 <div id="shop"><div id="shopView"></div>
-  <div id="shopTop"><div class="st-logo">Бутик <b>«Шёлк»</b></div><div id="shopRank"></div><div id="shopMoney">0 ₽</div><button id="shopClose">Выйти ✕</button></div>
+  <div id="shopTop"><div class="st-logo">Бутик <b>«Шёлк»</b></div>
+    <div id="shopTabs"><button data-tab="outfits" class="on">Наряды</button><button data-tab="moves">Зал · приёмы</button></div>
+    <div id="shopRank"></div><div id="shopMoney">0 ₽</div><button id="shopClose">Выйти ✕</button></div>
   <div id="shopList"></div>
-  <div id="shopCard"><div id="shopName"></div><div id="shopStyle"></div><div id="shopTags"></div><div id="shopDesc"></div><div id="shopPrice"></div><button id="shopBtn"></button><div id="shopNote"></div></div>
+  <div id="shopCard"><div id="shopName"></div><div id="shopStyle"></div><div id="shopTags"></div><div id="shopDesc"></div><div id="shopPrice"></div><button id="shopBtn"></button>
+    <div id="shopLoadout" style="display:none"><div class="lbl">Слоты</div><div id="shopSlots"></div></div>
+    <div id="shopNote"></div></div>
   <div id="shopCtl"><button id="shopSpin">⟳ Вращать</button><button data-view="front">Спереди</button><button data-view="side">Сбоку</button><button data-view="back">Сзади</button><button id="shopFig"></button></div>
   <div id="shopHelp">Мышь — крутить камеру · колесо — ближе/дальше · ↑/↓ — выбор · Enter — купить/надеть · Esc — выйти</div>
 </div>
@@ -86,6 +90,6 @@
   <div class="btns"><button id="againBtn" class="primary">Играть снова</button></div></div></div>
 
 <noscript>Нужен JavaScript и WebGL2.</noscript>
-<script type="module" src="js/main.js?v=0.3.1"></script>
+<script type="module" src="js/main.js?v=0.4.0"></script>
 </body>
 </html>

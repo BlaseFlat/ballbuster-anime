@@ -46,7 +46,9 @@ export class Player {
     const tgt = this.pickTarget(dirYaw);
     if (kind === 'finisher' && (g.focus < 100 || !tgt || tgt.out)) { g.ui.hint(g.focus < 100 ? 'Добивание: нужен полный «Фокус»' : 'Нет цели для добивания'); return; }
     let move = kind;
+    // contextual finishers on downed guys always override the loadout slot
     if (tgt && kind !== 'finisher') { if (tgt.level === 3) move = 'lowkick'; else if (tgt.level >= 4) move = 'stomp'; }
+    if (!STRIKES[move]) { g.ui.hint('Приём не экипирован'); return; }
     this.target = tgt; this.move = move; this.dashed = false;
     if (tgt) {
       const d = this.distTo(tgt);

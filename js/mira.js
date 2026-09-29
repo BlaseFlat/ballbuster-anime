@@ -117,9 +117,10 @@ export class Mira {
       const slot = this._slot(guy, 0.55);
       this.pos.lerp(slot, Math.min(1, dt * 10));
       this.yaw = guy.yaw;
-      A.play('talk', { fade: 0.1 }); // arms-forward-ish idle as "grip"
+      A.play('hold', { fade: 0.1 });
       A.setExpr('angry', 0.55); A.setExpr('happy', 0);
       guy.held = true; guy.heldBy = this;
+      if (guy.actor.curName !== 'held') guy.actor.play('held', { fade: 0.12 });
       if (this.holdT <= 0 || guy.level > 0) {
         this._release(); this.holdCd = HOLD_CD;
         this.state = guy.out || guy.dropped ? 'return' : 'run';
@@ -133,7 +134,7 @@ export class Mira {
       const slot = this._slot(guy, 1.35, 1); // off to the side, in his view
       this.pos.lerp(slot, Math.min(1, dt * 8));
       this.yaw = Math.atan2(guy.pos.x - this.pos.x, guy.pos.z - this.pos.z);
-      A.play('taunt', { fade: 0.08, restart: A.curName !== 'taunt' });
+      A.play('tease', { fade: 0.08, restart: A.curName !== 'tease' });
       A.setExpr('happy', 0.7); A.setExpr('angry', 0.2);
       if (this.distT <= 0 || guy.level > 0) {
         this.distCd = DIST_CD;
@@ -158,12 +159,12 @@ export class Mira {
     guy.held = true; guy.heldBy = this;
     guy.guardUntil = 0; guy.guardLv = 0; guy.guardAt = 1e9;
     if (guy.act === 'windup' || guy.act === 'punch' || guy.act === 'guard') guy.setAct(null);
-    guy.actor.play('flinch', { fade: 0.1, restart: true });
+    guy.actor.play('held', { fade: 0.1, restart: true });
     guy.say(pick(['Эй, пусти!', 'Руки… руки!', 'Не трогай!']), 1.6);
     this.g.ui.banner('Мира держит!', 'mira', 1200);
     this.g.ui.toast('Мира', 'Держит руки — бей в пах!');
     this.g.sfx.chord?.();
-    this.actor.play('talk', { fade: 0.08 }); this.actor.setExpr('angry', 0.6);
+    this.actor.play('hold', { fade: 0.08 }); this.actor.setExpr('angry', 0.6);
   }
 
   _beginDistract(guy) {
@@ -177,7 +178,7 @@ export class Mira {
     this.g.ui.banner('Отвлекла!', 'mira', 1100);
     this.g.ui.toast('Мира', 'Окно для идеального удара!');
     this.g.sfx.blip?.(1047);
-    this.actor.play('taunt', { fade: 0.08, restart: true });
+    this.actor.play('tease', { fade: 0.08, restart: true });
   }
 
   _release() {

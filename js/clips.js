@@ -71,6 +71,79 @@ const R_VICTORY = M(SOFT_HAND, {
   leftUpperArm: [0, 30, -62], leftLowerArm: [0, -100, 0], leftHand: [0, 0, 20],
   rightUpperArm: [0, 10, -25], rightLowerArm: [0, 125, 0], rightHand: [0, 0, 10],
 });
+
+// Extra strikes (shop-unlockable)
+const R_ROUND_CH = M(R_STANCE, {
+  hips: [-4, -35, 0], spine: [-8, -12, 0], chest: [-4, -8, 0], head: [4, 20, 0],
+  leftUpperLeg: [-6, 6, 4], leftLowerLeg: [14, 0, 0],
+  rightUpperLeg: [-60, -40, 10], rightLowerLeg: [90, 0, 0], rightFoot: [30, 0, 20],
+  leftUpperArm: [-20, -30, -50], rightUpperArm: [20, 40, 40],
+});
+const R_ROUND_HIT = M(R_ROUND_CH, {
+  hips: [-12, 25, 0], spine: [-16, 10, 0], head: [8, -10, 0],
+  rightUpperLeg: [-78, 55, -8], rightLowerLeg: [10, 0, 0], rightFoot: [40, 0, -10],
+  leftUpperLeg: [8, 0, 4], leftLowerLeg: [8, 0, 0], leftFoot: [28, 0, 0],
+});
+const R_AXE_UP = M(R_STANCE, {
+  hips: [-8, -10, 0], spine: [-20, 0, 0], chest: [-12, 0, 0], head: [24, 0, 0],
+  rightUpperLeg: [-110, 0, -6], rightLowerLeg: [20, 0, 0], rightFoot: [-20, 0, 0],
+  leftUpperLeg: [6, 4, 2], leftLowerLeg: [10, 0, 0], leftFoot: [20, 0, 0],
+  leftUpperArm: [0, -20, -30], rightUpperArm: [0, 20, 30],
+});
+const R_AXE_HIT = M(R_AXE_UP, {
+  hips: [8, 0, 0], spine: [18, 0, 0], head: [10, 0, 0],
+  rightUpperLeg: [-50, 0, -4], rightLowerLeg: [8, 0, 0], rightFoot: [55, 0, 0],
+  leftUpperLeg: [-8, 4, 2], leftLowerLeg: [28, 0, 0],
+});
+const R_JKNEE_HOP = M(R_STANCE, {
+  hips: [-6, 0, 0], spine: [6, 0, 0],
+  leftUpperLeg: [-40, 0, 4], leftLowerLeg: [70, 0, 0], leftFoot: [10, 0, 0],
+  rightUpperLeg: [-70, 0, -4], rightLowerLeg: [100, 0, 0],
+  leftUpperArm: [0, -50, -20], rightUpperArm: [0, 50, 20],
+});
+const R_JKNEE_HIT = M(R_KNEE_HIT, {
+  hips: [-18, 0, 0], spine: [22, 0, 0],
+  rightUpperLeg: [-95, 0, -2], rightLowerLeg: [125, 0, 0],
+  leftUpperLeg: [-20, 0, 2], leftLowerLeg: [40, 0, 0], leftFoot: [20, 0, 0],
+});
+const R_HEEL_CH = M(R_STANCE, {
+  hips: [-4, 8, 0], spine: [-6, 4, 0], head: [8, -6, 0],
+  rightUpperLeg: [-55, 20, -20], rightLowerLeg: [100, 0, 0], rightFoot: [-30, 0, 0],
+  leftUpperLeg: [-4, 0, 4], leftLowerLeg: [12, 0, 0],
+});
+const R_HEEL_HIT = M(R_HEEL_CH, {
+  hips: [-10, -6, 0], spine: [-12, -4, 0],
+  rightUpperLeg: [-82, -10, 4], rightLowerLeg: [6, 0, 0], rightFoot: [-40, 0, 0],
+  leftFoot: [30, 0, 0],
+});
+
+// Mira assist poses (g_ prefix — Mira Actor uses g_)
+const G_MIRA_HOLD = M(FIST, ARMS_DOWN, {
+  hips: [4, 0, 0], spine: [8, 0, 0], chest: [4, 0, 0], head: [-4, 0, 0],
+  leftUpperLeg: [-4, 0, 4], rightUpperLeg: [-4, 0, -4], leftLowerLeg: [8, 0, 0], rightLowerLeg: [8, 0, 0],
+  // arms forward-and-in: gripping wrists from behind
+  leftUpperArm: [0, -75, -25], leftLowerArm: [0, -55, 0], leftHand: [0, 0, -20],
+  rightUpperArm: [0, 75, 25], rightLowerArm: [0, 55, 0], rightHand: [0, 0, 20],
+});
+const G_MIRA_HOLD2 = M(G_MIRA_HOLD, {
+  leftUpperArm: [0, -80, -18], rightUpperArm: [0, 80, 18], spine: [10, 0, 0], head: [-6, 4, 0],
+});
+const G_MIRA_TEASE = M(SOFT_HAND, {
+  hips: [0, 28, -6], spine: [-8, -12, 4], chest: [-4, -8, 0], neck: [0, -10, 0], head: [6, -16, 8],
+  leftUpperLeg: [-8, 8, 6], leftLowerLeg: [14, 0, 0], rightUpperLeg: [-4, -6, -8], rightLowerLeg: [10, 0, 0],
+  leftUpperArm: [0, 20, -55], leftLowerArm: [0, -100, 0], leftHand: [0, 0, 25],
+  rightUpperArm: [0, 55, 35], rightLowerArm: [0, 40, 0], rightHand: [0, 0, -15],
+});
+const G_MIRA_TEASE2 = M(G_MIRA_TEASE, {
+  rightUpperArm: [0, 70, 50], rightLowerArm: [0, 20, 0], head: [2, -20, 10], hips: [0, 32, -8],
+});
+// Guy pinned: arms forced back, can't guard
+const G_HELD = M(SOFT_HAND, {
+  hips: [8, 0, 0], spine: [12, 0, 0], chest: [6, 0, 0], head: [-8, 0, 0],
+  leftUpperLeg: [-10, -4, -4], leftLowerLeg: [18, 0, 0], rightUpperLeg: [-10, 4, 4], rightLowerLeg: [18, 0, 0],
+  leftUpperArm: [20, 40, -70], leftLowerArm: [0, -100, 0], leftHand: [0, 0, 10],
+  rightUpperArm: [20, -40, 70], rightLowerArm: [0, 100, 0], rightHand: [0, 0, -10],
+});
 const R_DODGE = M(R_STANCE, { hips: [8, -30, 0], spine: [16, -10, 0], chest: [8, 0, 0],
   leftUpperLeg: [-50, 10, 10], leftLowerLeg: [80, 0, 0], rightUpperLeg: [30, 0, -14], rightLowerLeg: [30, 0, 0] });
 
@@ -120,6 +193,10 @@ export const PROC = {
   r_finisher: { keys: [K(0, R_STANCE), K(0.2, R_FIN_WIND, [0, -0.03, -0.02]), K(0.34, R_KICK_CHAMBER, [0, 0.02, 0.04]), K(0.46, R_FIN_HIT, [0, 0.07, 0.08], 'out'), K(0.7, R_FIN_HIT, [0, 0.06, 0.08]), K(1.0, R_STANCE)] },
   r_lowkick: { keys: [K(0, R_STANCE), K(0.1, M(R_KICK_CHAMBER, { rightUpperLeg: [-50, 0, -4] })), K(0.22, R_LOW_HIT, [0, 0, 0.05], 'out'), K(0.32, R_LOW_HIT, [0, 0, 0.05]), K(0.62, R_STANCE)] },
   r_stomp: { keys: [K(0, R_STANCE), K(0.2, R_STOMP_UP, [0, 0.03, 0.02]), K(0.3, R_STOMP_HIT, [0, -0.04, 0.08], 'in'), K(0.46, R_STOMP_HIT, [0, -0.04, 0.08]), K(0.8, R_STANCE)] },
+  r_roundhouse: { keys: [K(0, R_STANCE), K(0.12, R_ROUND_CH, [0, 0.01, 0.02]), K(0.30, R_ROUND_HIT, [0, 0.04, 0.07], 'out'), K(0.42, R_ROUND_HIT, [0, 0.04, 0.07]), K(0.58, R_ROUND_CH, [0, 0.01, 0.03]), K(0.85, R_STANCE)] },
+  r_axe: { keys: [K(0, R_STANCE), K(0.16, R_AXE_UP, [0, 0.05, 0.02]), K(0.34, R_AXE_HIT, [0, -0.02, 0.08], 'in'), K(0.48, R_AXE_HIT, [0, -0.02, 0.08]), K(0.78, R_STANCE)] },
+  r_jumpknee: { keys: [K(0, R_STANCE), K(0.10, R_JKNEE_HOP, [0, 0.12, 0.04]), K(0.24, R_JKNEE_HIT, [0, 0.08, 0.09], 'out'), K(0.38, R_JKNEE_HIT, [0, 0.04, 0.08]), K(0.55, R_KNEE_GRAB, [0, 0, 0.03]), K(0.78, R_STANCE)] },
+  r_heel: { keys: [K(0, R_STANCE), K(0.12, R_HEEL_CH, [0, 0.02, 0.02]), K(0.28, R_HEEL_HIT, [0, 0.03, 0.07], 'out'), K(0.40, R_HEEL_HIT, [0, 0.03, 0.07]), K(0.68, R_STANCE)] },
   r_victory: { keys: [K(0, R_STANCE), K(0.4, R_VICTORY, [0, -0.01, 0]), K(1.6, M(R_VICTORY, { head: [2, -18, 8] })), K(2.6, R_VICTORY)], hold: true },
   r_dodge: { keys: [K(0, R_STANCE), K(0.08, R_DODGE, [0, -0.08, 0]), K(0.26, R_DODGE, [0, -0.06, 0]), K(0.38, R_STANCE)] },
   r_caught: { keys: [K(0, R_STANCE), K(0.1, M(R_DODGE, { spine: [-14, 0, 0], head: [10, 0, 0] }), [0, -0.02, -0.04]), K(0.5, R_STANCE)] },
@@ -131,6 +208,9 @@ export const PROC = {
   g_tap: { loop: true, keys: [K(0, G_TAP_A, [0.1, -0.82, 0]), K(0.18, G_TAP_B, [0.1, -0.82, 0], 'in'), K(0.4, G_TAP_A, [0.1, -0.82, 0])] },
   g_guard: { loop: true, keys: wave(G_GUARD, 1, 4, 1.6, breathe) },
   g_taunt: { keys: [K(0, G_STANCE), K(0.3, G_TAUNT_A), K(0.6, G_TAUNT_B), K(0.9, G_TAUNT_A), K(1.2, G_TAUNT_B), K(1.6, G_STANCE)] },
+  g_hold: { loop: true, keys: [K(0, G_MIRA_HOLD), K(0.45, G_MIRA_HOLD2), K(0.9, G_MIRA_HOLD)] },
+  g_tease: { keys: [K(0, G_STANCE), K(0.2, G_MIRA_TEASE), K(0.5, G_MIRA_TEASE2), K(0.85, G_MIRA_TEASE), K(1.2, G_MIRA_TEASE2), K(1.55, G_STANCE)] },
+  g_held: { loop: true, keys: wave(G_HELD, 1.2, 4, 1.4, breathe) },
   g_windup: { keys: [K(0, G_STANCE), K(0.45, G_WINDUP, [0, -0.02, -0.02])], hold: true },
   g_punch: { keys: [K(0, G_WINDUP, [0, -0.02, -0.02]), K(0.12, G_PUNCH, [0, -0.03, 0.08], 'out'), K(0.35, G_PUNCH, [0, -0.03, 0.08]), K(0.7, G_STANCE)] },
   g_getup: { keys: [K(0, G_DOUBLE, [0, -0.12, -0.14]), K(0.5, G_FLINCH, [0, -0.04, -0.05]), K(0.9, G_STANCE)] },
