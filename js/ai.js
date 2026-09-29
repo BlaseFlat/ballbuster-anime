@@ -16,7 +16,7 @@ export class Guy {
     this.def = def; this.actor = actor; this.game = game; this.world = game.world;
     this.trait = TRAITS[def.trait]; this.pain = new Pain(this.trait.tough);
     this.pos = this.world.randomPoint(def.area); this.yaw = Math.random() * Math.PI * 2; this.vel = new THREE.Vector3();
-    this.mode = 'calm'; this.level = 0; this.out = false; this.dropped = false; this.met = false;
+    this.mode = 'calm'; this.level = 0; this.out = false; this.dropped = false; this.held = false; this.heldBy = null; this.openUntil = 0; this.met = false;
     this.act = null; this.actT = 0; this.decideT = rnd(0.5, 2); this.goal = null; this.idleT = rnd(1, 4);
     this.guardLv = 0; this.guardUntil = 0; this.guardAt = 0; this.hits = 0; this.lastHitT = -99; this.tapT = 0;
     this.sayCd = 0; this.bubble = null; this.fleeT = 0; this.stepV = new THREE.Vector3();
@@ -28,20 +28,25 @@ export class Guy {
   get state() { return this.out ? 'tap' : ORDER[this.level]; }
   get stateRu() { return this.out ? 'сдался' : STATE_RU[ORDER[this.level]]; }
   get down() { return this.level >= 3 || this.out; }
-  get canAct() { return this.level === 0 && !this.out; }
+  get canAct() { return this.level === 0 && !this.out && !this.held; }
   headPos(out = new THREE.Vector3()) { return this.head.getWorldPosition(out); }
   hitPoint(out = new THREE.Vector3()) {           // where strikes land (groin ≈ hips bone, a bit forward)
     this.hipsBone.getWorldPosition(out); out.y -= 0.06;
     out.x += Math.sin(this.yaw) * 0.1; out.z += Math.cos(this.yaw) * 0.1; return out;
   }
   say(text, dur = 2.2, cls = '') { this.game.ui.bubble(this, text, dur, cls); this.sayCd = 3; }
-  guard() { return this.guardLv; }
-  isOpen() {   // mid-windup, recovering from a punch, taunting or slowed by witch-time
-    return this.act === 'taunt' || (this.act === 'windup' && this.actT > 0.2) || (this.act === 'punch' && this.actT > 0.2) || this.game.witch > 0;
+  guard() {
+    if (this.held) return 0;                                 // Mira pins arms — no guard
+    if (this.game.now < (this.openUntil || 0)) return 0;     // distracted
+    return this.guardLv;
+  }
+  isOpen() {   // mid-windup, recovering from a punch, taunting, witch-time, or Mira assist
+    return this.held || this.game.now < (this.openUntil || 0)
+      || this.act === 'taunt' || (this.act === 'windup' && this.actT > 0.2) || (this.act === 'punch' && this.actT > 0.2) || this.game.witch > 0;
   }
   // ---- called by the player when a strike starts toward this guy ----
   onStrikeStart(eta, move) {
-    if (!this.canAct || this.game.witch > 0) return;
+    if (!this.canAct || this.game.witch > 0 || this.game.now < (this.openUntil || 0)) return;
     this.alert();
     const toP = Math.atan2(this.game.player.pos.x - this.pos.x, this.game.player.pos.z - this.pos.z);
     if (Math.abs(angDiff(toP, this.yaw)) > 1.5) return;                   // hit from behind: no chance to react
@@ -183,6 +188,11 @@ export class Guy {
       if (Math.abs(ex) > (r[1] - r[0]) / 2 - 1 || Math.abs(ez) > (r[3] - r[2]) / 2 - 1) { away.x -= ex * 0.2; away.z -= ez * 0.2; away.normalize(); }
       want = [away.x, away.z]; speed = GUY_RUN * this.trait.speed; face = Math.atan2(away.x, away.z);
       if (dist > 11 || this.fleeT < 0) { this.mode = 'alert'; if (this.sayCd <= 0) this.say(pick(this.trait.lines)); }
+    } else if (this.held) {
+      // Mira holding: struggle in place, no punch/guard
+      face = toP; this.vel.multiplyScalar(0.5);
+      if (A.curName !== 'flinch' && A.curName !== 'guard') A.play('flinch', { fade: 0.15 });
+      A.setExpr('surprised', 0.5); A.setExpr('angry', 0.4);
     } else if (this.mode === 'alert') {
       face = toP;
       if (dist > 13) { this.mode = 'calm'; this.goal = null; }
@@ -214,7 +224,7 @@ export class Guy {
       }
     }
     // locomotion
-    const mv = this.level === 0 && !this.out && this.act !== 'getup';
+    const mv = this.level === 0 && !this.out && !this.held && this.act !== 'getup';
     const tv = new THREE.Vector3(); if (want && mv) { const l = Math.hypot(want[0], want[1]) || 1; tv.set(want[0] / l * speed, 0, want[1] / l * speed); }
     this.vel.x += (tv.x - this.vel.x) * Math.min(1, dt * 8); this.vel.z += (tv.z - this.vel.z) * Math.min(1, dt * 8);
     if (!mv) this.vel.multiplyScalar(Math.exp(-dt * 6));

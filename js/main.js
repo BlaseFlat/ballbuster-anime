@@ -63,7 +63,7 @@ class Game {
   start() {
     this.started = true; this.sfx.init(); document.body.classList.add('playing');
     this.ui.toast('Неоновый район', 'Торговая улица'); this.area = 'street';
-    this.ui.hint('WASD — идти · J/ЛКМ ап-кик · K/ПКМ колено · E — Мира · B — бутик. Один точный удар в пах — и он не встаёт.', 8);
+    this.ui.hint('J/K — удар · E — Мира · R — Мира держит · T — Мира отвлекает · B — бутик. Один точный удар — и он не встаёт.', 8);
   }
   // ------------------------------------------------ combat glue
   onStrike(guy, move, res, info) {
@@ -135,6 +135,8 @@ class Game {
       I.keys.add(e.code);
       if (e.code === 'KeyB') { this.shop.enter(); return; }
       if (e.code === 'KeyE') { this.mira?.tryTalk(); return; }
+      if (e.code === 'KeyR') { this.mira?.requestAssist('hold'); return; }
+      if (e.code === 'KeyT') { this.mira?.requestAssist('distract'); return; }
       if (e.code === 'KeyJ') this.player.request('kick');
       if (e.code === 'KeyK') this.player.request('knee');
       if (e.code === 'KeyF') this.player.request('finisher');

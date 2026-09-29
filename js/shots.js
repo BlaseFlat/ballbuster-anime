@@ -106,6 +106,46 @@ export async function run(g, name) {
     while (!d.out && performance.now() - t0 < 5000) { step(g, 3); await new Promise((r) => setTimeout(r, 50)); }
     info.after = { out: d.out, level: d.level, dropped: d.dropped, state: d.state, money: (await import('./outfits.js')).save.money, grade: g.stats };
     g.camOverride = { pos: V(-13.0, 1.2, 3.4), look: V(-13.2, 0.55, 0), fov: 40 }; step(g, 2);
+  } else if (name === 'assist') {
+    // Mira hold/distract + KO. ?shot=assist&mode=hold|distract|ko
+    const { save } = await import('./outfits.js');
+    save.miraMeet();
+    const d = G('dima'); g.guys.forEach((x) => { if (x !== d) place(x, 30, 30, 0); });
+    P.pos.set(-14, 0, 0); P.yaw = Math.PI / 2; place(d, -12.6, 0, -Math.PI / 2);
+    d.mode = 'alert'; d.met = true; d.decideT = 99; d.trait = { ...d.trait, guard: 0.9, dodge: 0, attack: 0.5 };
+    g.mira.pos.set(-14.5, 0, -1.2); g.mira.home.copy(g.mira.pos); g.mira.yaw = Math.PI / 2; g.mira.state = 'idle';
+    step(g, 20);
+    const mode = Q.get('mode') || 'hold';
+    if (mode === 'distract') g.mira.requestAssist('distract');
+    else g.mira.requestAssist('hold');
+    // let her run in and start the assist
+    for (let i = 0; i < 90 && g.mira.state === 'run'; i++) step(g, 1);
+    step(g, 20);
+    info.assist = { state: g.mira.state, held: d.held, open: g.now < (d.openUntil || 0), guard: d.guard(), miraPos: g.mira.pos.toArray().map((v)=>+v.toFixed(2)) };
+    if (mode === 'holdpose') {
+      const mid = d.pos.clone().add(g.mira.pos).multiplyScalar(0.5);
+      g.camOverride = { pos: V(mid.x - 0.2, 1.4, mid.z + 3.2), look: V(mid.x, 1.0, mid.z), fov: 40 }; step(g, 2);
+    } else if (mode === 'ko' || mode === 'hold') {
+      // kick while held → expect perfect/clean drop
+      P.request('kick'); let k = 0; while (!P.resolved && k++ < 60) step(g, 1);
+      step(g, 10, 1 / 60);
+      const t0 = performance.now();
+      while (!d.out && performance.now() - t0 < 4000) { step(g, 3); await new Promise((r) => setTimeout(r, 40)); }
+      info.ko = { grade: g.stats._lastGrade, out: d.out, dropped: d.dropped, heldAtHit: info.assist.held };
+    }
+    if (mode === 'distract') {
+      info.distract = { open: d.isOpen(), openUntil: d.openUntil, now: g.now };
+      P.request('kick'); let k = 0; while (!P.resolved && k++ < 60) step(g, 1);
+      step(g, 8, 1 / 60);
+      info.ko = { grade: g.stats._lastGrade, out: d.out, dropped: d.dropped };
+      const t0 = performance.now();
+      while (!d.out && performance.now() - t0 < 4000) { step(g, 3); await new Promise((r) => setTimeout(r, 40)); }
+      info.ko.out = d.out;
+    }
+    if (mode !== 'holdpose') {
+      const mid = d.pos.clone().lerp(P.pos, 0.4);
+      g.camOverride = { pos: V(mid.x + 0.3, 1.35, mid.z + 3.5), look: V(mid.x, 0.9, mid.z), fov: 42 }; step(g, 2);
+    }
   } else if (name === 'mira') {
     const { save } = await import('./outfits.js');
     const { MIRA: M } = await import('./config.js');

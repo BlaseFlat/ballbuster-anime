@@ -124,3 +124,5 @@ body.inshop #hint,body.inshop #toast{z-index:40;position:fixed}
 .dopt.ghost{background:rgba(255,255,255,.12)}.dopt.reward{background:linear-gradient(90deg,#e0b23a,#ff7a3d);color:#1c1426}
 .dopt:hover{filter:brightness(1.08)}
 body.inshop #dialog,body:has(#dialog.show) #keys{opacity:.3}
+
+#banner.show.mira{color:#7ef0d8;text-shadow:0 0 18px #2ec4b6,3px 3px 0 #1c1426;font-size:42px}

@@ -95,7 +95,7 @@ export class Player {
     if (!tgt || tgt.out && S.move !== 'stomp') { g.onWhiff(S.move); return; }
     const d = this.distTo(tgt), a = Math.abs(angDiff(Math.atan2(tgt.pos.x - this.pos.x, tgt.pos.z - this.pos.z), this.yaw)) * DEG;
     const since = g.now - this.lastContact;
-    const timing = { open: tgt.isOpen(), rhythm: since >= COMBAT.rhythmWin[0] && since <= COMBAT.rhythmWin[1] + S.def.contact, dash: this.dashed, witch: g.witch > 0 || S.move === 'finisher' };
+    const timing = { open: tgt.isOpen(), held: !!tgt.held, distract: g.now < (tgt.openUntil || 0), rhythm: since >= COMBAT.rhythmWin[0] && since <= COMBAT.rhythmWin[1] + S.def.contact, dash: this.dashed, witch: g.witch > 0 || S.move === 'finisher' };
     const res = gradeStrike({ move: S.move, distErr: Math.abs(d - S.def.dist), angleDeg: a, timing, defense: { guard: tgt.guard() } });
     if (tgt.out && S.move === 'stomp' && res.grade !== 'miss') res.grade = 'glance';
     if (res.grade !== 'miss') this.lastContact = g.now;

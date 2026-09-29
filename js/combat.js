@@ -9,6 +9,8 @@ export function gradeStrike({ move, distErr, angleDeg, timing = {}, defense = {}
   const acc = dist * ang;
   let bonus = 0;
   if (timing.open) bonus += C.openBonus;
+  if (timing.held) bonus += 0.35;          // Mira pin: big help toward Идеально
+  if (timing.distract) bonus += 0.28;
   if (timing.rhythm) bonus += C.rhythmBonus;
   if (timing.dash) bonus -= C.dashPenalty;
   if (timing.witch) bonus += 1;
