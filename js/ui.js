@@ -1,6 +1,6 @@
 // DOM HUD: reputation/rank, focus meter, combo counter, target card, nameplates, speech bubbles, toasts, banners.
 import * as THREE from 'three';
-import { RANKS, GRADE_RU } from './config.js';
+import { RANKS, GRADE_RU, MIRA } from './config.js';
 import { save } from './outfits.js';
 const $ = (id) => document.getElementById(id);
 const _v = new THREE.Vector3();
@@ -44,7 +44,11 @@ export class UI {
     this.el.rep.textContent = Math.round(g.rep); this.el.money.textContent = save.money + ' ₽';
     let rank = RANKS[0][1]; for (const [v, n] of RANKS) if (g.rep >= v) rank = n; this.el.rank.textContent = rank;
     this.el.focus.style.width = Math.min(100, g.focus) + '%'; this.el.focusBox.classList.toggle('full', g.focus >= 100);
-    this.el.goals.innerHTML = `Проучено: <b>${g.guys.filter((x) => x.out).length}</b> / ${g.guys.length}`;
+    const outs = g.guys.filter((x) => x.out).length;
+    const qDone = MIRA.quests.filter((q) => save.questClaimed(q.id)).length;
+    const qReady = MIRA.quests.filter((q) => !save.questClaimed(q.id) && save.questProg(q.id) >= q.goal).length;
+    this.el.goals.innerHTML = `Проучено: <b>${outs}</b> / ${g.guys.length}` + (qReady ? ` · <b style="color:var(--gold)">квест готов</b>` : ` · квесты ${qDone}/${MIRA.quests.length}`);
+
     if ((this.hintT -= dt) < 0) this.el.hint.classList.remove('show');
     // target card: current or nearest engaged guy
     const t = g.player.target && g.player.distTo(g.player.target) < 7 ? g.player.target : g.focusGuy;

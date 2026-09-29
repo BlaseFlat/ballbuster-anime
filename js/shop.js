@@ -86,7 +86,7 @@ export class Shop {
     if (save.has(o.id)) { save.setOutfit(o.id); g.ui.hint(`Надето: «${o.ru}»`, 2); g.sfx.chord?.(); }
     else if (save.locked(o.id)) { g.ui.hint(`Откроется на ранге «${RANKS[o.rank][1]}»`, 2.5); return; }
     else if (save.money < o.price) { g.ui.hint(`Не хватает ${o.price - save.money} ₽ — побеждай на районе`, 2.5); return; }
-    else if (save.buy(o.id)) { save.setOutfit(o.id); g.ui.hint(`Куплено и надето: «${o.ru}» (−${o.price} ₽)`, 2.5); g.sfx.chord?.(); this.flash(); }
+    else if (save.buy(o.id)) { save.setOutfit(o.id); g.ui.hint(`Куплено и надето: «${o.ru}» (−${o.price} ₽)`, 2.5); g.sfx.chord?.(); this.flash(); g.mira?.onBuy(); }
     this.refresh();
   }
   flash() { const c = this.cards[this.sel]; c.classList.remove('bought'); void c.offsetWidth; c.classList.add('bought'); }

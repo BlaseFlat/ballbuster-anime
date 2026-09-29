@@ -28,14 +28,17 @@ export const COMBAT = {
   openBonus: 0.2, rhythmBonus: 0.12, rhythmWin: [0.18, 0.75], dashPenalty: 0.05,
   grade: { perfect: 1.0, clean: 0.55, glance: 0.25 }, perfectAcc: 0.95,
   guardBlock: 0.55,
-  dmg: { perfect: 24, clean: 16, glance: 6, block: 2, miss: 0 },
-  kneeGuardBreak: 0.55,  // chance a knee drives through a guard (clinch) instead of being blocked
-  seriesWindow: 1.8, seriesStep: 0.15,
-  decay: 3.0, decayDelay: 1.4,
-  pain: { flinch: 10, double_over: 34, knees: 62, floor: 95 },
-  hitStop: 0.07, hitStopPerfect: 0.11,
-  witchTime: 1.6,        // s of slow-mo after a perfect dodge
-  comboWindow: 1.6,      // s to keep the combo counter alive
+  // Realistic one-shot feel: perfect/clean to the groin ENDS the fight. Glance/block barely sting.
+  dmg: { perfect: 110, clean: 78, glance: 3, block: 1, miss: 0 },
+  kneeGuardBreak: 0.7,   // knee in clinch more often drives through a guard
+  seriesWindow: 1.2, seriesStep: 0.05,  // spam chain barely helps — precision matters, not farm
+  decay: 10.0, decayDelay: 0.55,       // glances fade fast; no farming KO off weak hits
+  pain: { flinch: 6, double_over: 45, knees: 70, floor: 95 },
+  hitStop: 0.08, hitStopPerfect: 0.16,
+  witchTime: 1.6,
+  comboWindow: 1.6,
+  dropPerfect: true,     // perfect → floor, no get-up
+  dropClean: true,       // clean → knees → floor → tap, no standing recovery
 };
 
 export const TRAITS = {
@@ -78,3 +81,27 @@ export const GRADE_RU = { perfect: 'ИДЕАЛЬНО!', clean: 'ЧИСТО!', gl
 export const RANKS = [
   [0, 'Новенькая'], [40, 'Гроза двора'], [100, 'Уличная легенда'], [180, 'Королева района'],
 ];
+
+// Mira — подруга на районе (HairSample_Female, CC0). Квесты — вертикальный срез.
+export const MIRA = {
+  name: 'Мира', age: 22,
+  pos: [-6.5, 0, 3.2], yaw: Math.PI * 0.85,   // южный тротуар у «Шёлка», лицом к улице
+  hair: 0x3a1a55, tint: { Tops: 0x2ec4b6, Shoes: 0xf2e6d8 },
+  greet: [
+    'Мира: «Русана! Наконец-то. Этот район совсем одичал — парни клеятся к каждой».',
+    'Мира: «Я рядом. Если что — зови. Или ударь, ты же умеешь».',
+  ],
+  chat: [
+    'Мира: «Один точный ап-кик — и он уже не встаёт. Не надо молотить воздух».',
+    'Мира: «В «Шёлке» загляни — тебе пойдёт что-нибудь дерзкое».',
+    'Мира: «Я в порядке. Главное — не давай им подниматься».',
+  ],
+  quests: [
+    { id: 'precision', ru: 'Точный удар', goal: 1, desc: 'Свали одного парня идеальным ударом в пах.',
+      done: 'Мира: «Вот это да… Он даже не встал. Так их».', reward: 60 },
+    { id: 'silk', ru: 'Шёлковый дебют', goal: 1, desc: 'Купи любой наряд в бутике «Шёлк».',
+      done: 'Мира: «Ого. Тебе идёт. Парни будут отвлекаться — пользуйся».', reward: 40 },
+    { id: 'cleanup', ru: 'Зачистка двора', goal: 3, desc: 'Приучи троих парней (сдались).',
+      done: 'Мира: «Трое за вечер. Район уже шушукается. Горжусь».', reward: 120 },
+  ],
+};

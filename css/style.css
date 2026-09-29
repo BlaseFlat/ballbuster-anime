@@ -112,3 +112,15 @@ body.inshop #hud,body.inshop #plates,body.inshop #popups{display:none}
 #shopHelp{position:absolute;left:0;right:0;bottom:14px;text-align:center;font-size:12px;opacity:.7;pointer-events:none}
 @media (max-width:900px){#shopList{width:220px}#shopCard{width:260px}#shopCtl{width:260px}}
 body.inshop #hint,body.inshop #toast{z-index:40;position:fixed}
+
+/* ---------- dialog with Mira ---------- */
+#dialog{position:fixed;inset:0;display:none;z-index:35;background:rgba(10,6,16,.35);pointer-events:auto}
+#dialog.show{display:flex;align-items:flex-end;justify-content:center;padding:0 16px 28px}
+#dialogCard{width:min(560px,94vw);background:linear-gradient(160deg,rgba(36,18,42,.94),rgba(20,12,30,.92));border:2px solid rgba(255,95,162,.45);border-radius:18px;padding:16px 18px 14px;box-shadow:0 12px 40px rgba(0,0,0,.45)}
+#dialogName{font-size:15px;font-weight:800;color:var(--gold);letter-spacing:.08em;text-transform:uppercase;margin-bottom:8px}
+#dialogBody{font-size:16px;line-height:1.45;white-space:pre-wrap;min-height:3.2em;margin-bottom:12px}
+#dialogOpts{display:flex;flex-wrap:wrap;gap:8px}
+.dopt{font:inherit;cursor:pointer;border:0;border-radius:10px;padding:9px 14px;font-weight:700;color:#fff;background:linear-gradient(90deg,#7a5cff,#ff4f8b)}
+.dopt.ghost{background:rgba(255,255,255,.12)}.dopt.reward{background:linear-gradient(90deg,#e0b23a,#ff7a3d);color:#1c1426}
+.dopt:hover{filter:brightness(1.08)}
+body.inshop #dialog,body:has(#dialog.show) #keys{opacity:.3}

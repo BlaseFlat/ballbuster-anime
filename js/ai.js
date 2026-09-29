@@ -16,7 +16,7 @@ export class Guy {
     this.def = def; this.actor = actor; this.game = game; this.world = game.world;
     this.trait = TRAITS[def.trait]; this.pain = new Pain(this.trait.tough);
     this.pos = this.world.randomPoint(def.area); this.yaw = Math.random() * Math.PI * 2; this.vel = new THREE.Vector3();
-    this.mode = 'calm'; this.level = 0; this.out = false; this.met = false;
+    this.mode = 'calm'; this.level = 0; this.out = false; this.dropped = false; this.met = false;
     this.act = null; this.actT = 0; this.decideT = rnd(0.5, 2); this.goal = null; this.idleT = rnd(1, 4);
     this.guardLv = 0; this.guardUntil = 0; this.guardAt = 0; this.hits = 0; this.lastHitT = -99; this.tapT = 0;
     this.sayCd = 0; this.bubble = null; this.fleeT = 0; this.stepV = new THREE.Vector3();
@@ -64,47 +64,67 @@ export class Guy {
     if (this.mode === 'calm') { this.mode = 'alert'; this.decideT = rnd(0.4, 1.0); if (!this.met) { this.met = true; this.say(this.def.intro.replace(/^[^:]+:\s*/, ''), 3.2); } }
   }
   // ---- result of a strike (grade already decided) ----
+  // Realistic rule: one Идеально / Чисто to the groin DROPS him. He does not get back up to fight.
+  // Glance / block sting but fade — no KO farm from spam.
   onHit(grade, move, now) {
-    const g = this.game, A = this.actor;
-    this.alert(); this.lastHitT = now;
+    this.hits++; this.lastHitT = now; this.mode = this.mode === 'calm' ? 'alert' : this.mode;
+    const A = this.actor, g = this.game, P = g.player;
     if (grade === 'block') {
       this.pain.hit('block', 1, now);
-      A.play('flinch', { fade: 0.05, restart: true, at: 0.3, speed: 1.4 }); this.setAct('blockstun', 0.4);
-      if (this.sayCd <= 0 && Math.random() < 0.6) this.say(pick(['Ха! Блок!', 'Не так быстро', 'Видел!', ...this.trait.lines]));
-      if (this.trait.attack > 0.2 && Math.random() < 0.5) this.decideT = 0.25;     // counter after a block
+      this.setAct('blockstun', 0.35); A.play('guard', { fade: 0.05, restart: true });
+      A.setExpr('angry', 0.5); this.faceT = 0.6;
       return;
     }
     if (grade === 'miss') return;
-    this.hits++;
     const S = g.strikes[move]; const before = this.level;
     this.pain.hit(grade, S.dmg, now);
+    // ---- hard drop: perfect / clean ----
+    if (grade === 'perfect' || grade === 'clean') {
+      this.dropped = true; this.mode = 'alert'; this.guardUntil = 0; this.guardLv = 0;
+      const toFloor = grade === 'perfect' || move === 'finisher' || move === 'stomp' || before >= 3;
+      this.level = toFloor ? 4 : 3;
+      this.pain.value = Math.max(this.pain.value, toFloor ? COMBAT.pain.floor + 20 : COMBAT.pain.knees + 15);
+      A.play(toFloor ? 'floor' : 'knees', { fade: 0.08, restart: true });
+      A.setExpr('surprised', 1); A.setExpr('aa', 0.7); A.setExpr('sad', 0.8); this.faceT = 2.5;
+      // knockback
+      const dx = this.pos.x - P.pos.x, dz = this.pos.z - P.pos.z, d = Math.hypot(dx, dz) || 1;
+      const kb = toFloor ? 0.55 : 0.4; this.vel.x += dx / d * kb * 6; this.vel.z += dz / d * kb * 6;
+      g.sfx.grunt(this.def.base === 'guy_a' ? 0.85 : 1, 0.45, toFloor ? 1 : 0.7);
+      this.say(pick(toFloor
+        ? ['А-А-А…!', 'Нет… ноги…', 'Я… не могу…', 'Ыыыы…']
+        : ['Ох… колени…', 'Не могу встать…', 'Больно… очень…']), 2.0, 'pain');
+      // schedule: knees → floor → tap; perfect already on floor → tap soon
+      clearTimeout(this._dropT);
+      if (toFloor) {
+        this._dropT = setTimeout(() => { if (!this.out) this.startTap(); }, 900);
+      } else {
+        this._dropT = setTimeout(() => {
+          if (this.out) return;
+          this.level = 4; A.play('floor', { fade: 0.2, restart: true });
+          this.say(pick(['Всё… ложусь…', 'Не встану…', 'Хватит…']), 1.8, 'pain');
+          this._dropT = setTimeout(() => { if (!this.out) this.startTap(); }, 1100);
+        }, 1400);
+      }
+      return;
+    }
+    // ---- glance: flinch only, recovers fully ----
     let lv = ORDER.indexOf(this.pain.state);
-    if (move === 'finisher') lv = Math.max(lv, 4), this.pain.value = Math.max(this.pain.value, COMBAT.pain.floor + 5);
-    if (move === 'knee' && grade === 'perfect') lv = Math.max(lv, 2);
-    this.level = Math.max(this.level, lv);
-    this.act = null; this.guardLv = 0; this.guardUntil = 0;
-    const lvName = ORDER[this.level];
-    if (this.level >= 4 && (move === 'stomp' || move === 'finisher' || this.pain.value >= 112 || (before >= 4 && grade === 'perfect'))) {
-      this.startTap(); return;
-    }
+    this.level = Math.max(this.level, Math.min(lv, 1));   // glance never past flinch via level latch
     if (this.level > before || this.level <= 1) {
-      A.play(lvName === 'idle' ? 'flinch' : lvName, { fade: this.level > before + 1 ? 0.12 : 0.06, restart: true });
+      A.play(this.level === 0 ? 'flinch' : 'flinch', { fade: 0.06, restart: true });
     }
-    // knockback nudge
-    const p = g.player.pos, dx = this.pos.x - p.x, dz = this.pos.z - p.z, d = Math.hypot(dx, dz) || 1;
-    const kb = this.level >= 3 ? 0.05 : grade === 'perfect' ? 0.35 : 0.2; this.vel.x += dx / d * kb * 6; this.vel.z += dz / d * kb * 6;
-    // face / voice
-    A.setExpr('surprised', 1); A.setExpr('aa', 0.9); A.setExpr('sad', 0.3); A.setExpr('relaxed', 0); A.setExpr('angry', 0);
-    this.faceT = 0.45;
-    g.sfx.grunt(this.def.base === 'guy_a' ? 0.85 : 1, 0.25 + this.level * 0.08, this.level / 4);
-    if (this.level >= 2 && this.sayCd <= 0 && Math.random() < 0.55) this.say(pick(['Ыыы…', 'Ох…', 'А-а-а…', 'Ммф…', 'За что…', 'Только не туда…']), 1.6, 'pain');
-    if (this.trait.flee && this.level === 1 && Math.random() < this.trait.flee) { this.fleeNext = true; }
+    const dx = this.pos.x - P.pos.x, dz = this.pos.z - P.pos.z, d = Math.hypot(dx, dz) || 1;
+    this.vel.x += dx / d * 0.15 * 6; this.vel.z += dz / d * 0.15 * 6;
+    A.setExpr('surprised', 0.35); A.setExpr('sad', 0.2); this.faceT = 0.5;
+    g.sfx.grunt(this.def.base === 'guy_a' ? 0.85 : 1, 0.15, 0.15);
+    if (this.trait.flee && Math.random() < this.trait.flee * 0.4) { this.fleeNext = true; }
   }
   startTap() {
-    this.level = 4; this.out = true; this.tapT = 0; this.mode = 'out';
+    if (this.out) return;
+    this.dropped = true; this.level = 4; this.out = true; this.tapT = 0; this.mode = 'out';
     this.actor.play('floor', { fade: 0.1, restart: true });
     this.actor.setExpr('sad', 1); this.actor.setExpr('surprised', 0.4); this.actor.setExpr('aa', 0.5);
-    setTimeout(() => { this.actor.play('tap', { fade: 0.3 }); this.say(pick(['Всё! Всё! Сдаюсь!', 'Хватит… я сдаюсь…', 'Ладно, ты победила!']), 2.8, 'pain'); }, 900);
+    setTimeout(() => { this.actor.play('tap', { fade: 0.3 }); this.say(pick(['Всё! Всё! Сдаюсь!', 'Хватит… я сдаюсь…', 'Ладно, ты победила!', 'Больше не встану…']), 2.8, 'pain'); }, 700);
     this.game.onDefeat(this);
   }
   // ---- per-frame ----
@@ -124,17 +144,20 @@ export class Guy {
       this.tapT += dt;
       if (this.tapT > 5 && A.curName === 'tap') A.play('floor', { fade: 0.6 });
     } else if (this.level > 0) {
-      // hurt: stay down until the pain eases, then climb up (floor→knees→… or straight to stance for low levels)
-      const since = now - this.lastHitT;
-      if (since > RECOVER[this.level] && ORDER.indexOf(this.pain.state) < this.level) {
-        this.level = this.level >= 3 ? this.level - 1 : 0;
-        if (this.level === 0) { A.play('getup', { fade: 0.35, restart: true }); this.setAct('getup', 0.9); this.mode = 'alert';
-          if (this.fleeNext || (this.trait.flee && Math.random() < this.trait.flee)) { this.fleeNext = false; this.mode = 'flee'; this.fleeT = rnd(3, 5); }
-          else if (this.sayCd <= 0 && Math.random() < 0.6) this.say(pick(['Ну ты даёшь…', 'Кха… ладно…', ...this.trait.lines]));
-        } else A.play(ORDER[this.level], { fade: 0.6, restart: true, at: 0.3 });
-        A.setExpr('sad', 0.35 + this.level * 0.15);
+      // dropped = finished by a clean/perfect hit: NEVER recover to standing
+      if (this.dropped) {
+        // only writhe; tap is scheduled from onHit
+        if (this.level >= 3 && A.curName !== 'floor' && A.curName !== 'knees' && A.curName !== 'tap') A.play(this.level >= 4 ? 'floor' : 'knees', { fade: 0.2 });
+      } else {
+        // glance flinch only — recover to idle quickly
+        const since = now - this.lastHitT;
+        if (this.level === 1 && (since > 0.55 || (A.curName === 'flinch' && A.time > 0.7))) {
+          this.level = 0; this.setAct(null);
+          if (this.fleeNext || (this.trait.flee && Math.random() < this.trait.flee * 0.5)) { this.fleeNext = false; this.mode = 'flee'; this.fleeT = rnd(2, 4); }
+        } else if (since > RECOVER[this.level] && ORDER.indexOf(this.pain.state) < this.level && this.level < 3) {
+          this.level = 0; A.play('getup', { fade: 0.25, restart: true }); this.setAct('getup', 0.6); this.mode = 'alert';
+        }
       }
-      if (this.level === 1 && A.curName === 'flinch' && A.time > 0.85) { this.level = 0; this.setAct(null); }
     } else if (this.act === 'hop') {
       this.pos.addScaledVector(this.stepV, dt); this.stepV.multiplyScalar(Math.exp(-dt * 6)); face = toP;
       if (this.actT > 0.35) this.setAct(null);

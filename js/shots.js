@@ -93,6 +93,32 @@ export async function run(g, name) {
     step(g, 30); P.request(Q.get('move') || 'kick'); let k = 0; while (!P.resolved && k++ < 60) step(g, 1);
     step(g, +(Q.get('n') || 7), 1 / 60); info.grade = g.stats;
     g.camOverride = { pos: V(-13.0 + (+(Q.get('cx') || 0.6)), 1.15, +(Q.get('cz') || 3.3)), look: V(-13.2, 0.8, 0), fov: 40 }; g.fixedDt = 1 / 240; g.tick();
+  } else if (name === 'onehit') {
+    // one perfect kick → floor → tap; ?shot=onehit&n=frames after contact
+    const d = G('dima'); g.guys.forEach((x) => { if (x !== d) place(x, 30, 30, 0); });
+    P.pos.set(-14, 0, 0); P.yaw = Math.PI / 2; place(d, -12.65, 0, -Math.PI / 2); d.mode = 'alert'; d.met = true; d.decideT = 99; d.trait = { ...d.trait, guard: 0, dodge: 0 };
+    step(g, 30); P.request('kick');
+    let k = 0; while (!P.resolved && k++ < 60) step(g, 1);
+    info.atContact = { grade: g.stats._lastGrade, level: d.level, dropped: d.dropped, pain: +d.pain.value.toFixed(1) };
+    // hold a few frames then advance until tap
+    step(g, +(Q.get('n') || 8), 1 / 60);
+    const t0 = performance.now();
+    while (!d.out && performance.now() - t0 < 5000) { step(g, 3); await new Promise((r) => setTimeout(r, 50)); }
+    info.after = { out: d.out, level: d.level, dropped: d.dropped, state: d.state, money: (await import('./outfits.js')).save.money, grade: g.stats };
+    g.camOverride = { pos: V(-13.0, 1.2, 3.4), look: V(-13.2, 0.55, 0), fov: 40 }; step(g, 2);
+  } else if (name === 'mira') {
+    const { save } = await import('./outfits.js');
+    const { MIRA: M } = await import('./config.js');
+    g.guys.forEach((x) => place(x, 30, 30, 0));
+    g.mira.pos.set(M.pos[0], 0, M.pos[2]); g.mira.yaw = M.yaw;
+    g.mira.actor.root.position.copy(g.mira.pos); g.mira.actor.root.rotation.y = g.mira.yaw;
+    g.mira.actor.play('idle', { fade: 0 }); g.mira.actor.setExpr('happy', 0.4);
+    P.pos.set(M.pos[0] + 0.9, 0, M.pos[2] - 1.3); P.yaw = Math.atan2(M.pos[0] - P.pos.x, M.pos[2] - P.pos.z);
+    step(g, 40);
+    info.miraBox = (() => { const b = new THREE.Box3().setFromObject(g.mira.actor.root); return { min: b.min.toArray(), max: b.max.toArray(), pos: g.mira.pos.toArray() }; })();
+    if (Q.get('talk') !== '0') { g.mira.open(); if (Q.get('mode') === 'quests') g.mira.render('quests'); step(g, 10); }
+    g.camOverride = { pos: V(M.pos[0] + 0.4, 1.4, M.pos[2] - 2.8), look: V(M.pos[0], 1.05, M.pos[2]), fov: 38 }; step(g, 3);
+    info.mira = { met: save.miraMet, talking: g.mira.talking, quests: M.quests.map((q) => q.id + ':' + save.questProg(q.id)) };
   } else if (name === 'storefront') {
     P.pos.set(-1, 0, 4.2); P.yaw = 0; g.guys.forEach((x) => place(x, 30, 30, 0)); step(g, 30);
     g.camOverride = { pos: V(-1 + 3.2, 1.7, 0.2), look: V(-1, 1.5, 6.5), fov: 55 }; step(g, 2);

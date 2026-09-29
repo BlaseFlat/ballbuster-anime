@@ -3,7 +3,7 @@
 // Future shop: list OUTFITS, buy(id) spends money, equip(id) re-dyes. Mesh-based outfits can later add
 // `vrm: 'outfits/xxx.vrm'` and swap the whole body — the save format already stores just the id.
 import * as THREE from 'three';
-import { asset, RANKS } from './config.js';
+import { asset, RANKS, MIRA } from './config.js';
 import { recolorTexture } from './chars.js';
 
 // Wardrobe. Two kinds of looks:
@@ -46,11 +46,12 @@ export const outfitById = (id) => OUTFITS.find((o) => o.id === (ALIAS[id] || id)
 // ---------- wallet / save ----------
 const KEY = 'bba-save-v1';
 export const save = (() => {
-  let s = { money: 0, owned: ['street'], outfit: 'street', wins: 0, fame: 0 };
+  let s = { money: 0, owned: ['street'], outfit: 'street', wins: 0, fame: 0, miraMet: false, quests: {}, claimed: {} };
   try { Object.assign(s, JSON.parse(localStorage.getItem(KEY) || '{}')); } catch (e) {}
   // migrate v1 ids
   s.owned = [...new Set(['street', ...(s.owned || []).map((id) => outfitById(id).id)])]; s.outfit = outfitById(s.outfit).id;
   if (!s.owned.includes(s.outfit)) s.outfit = 'street';
+  s.quests = s.quests || {}; s.claimed = s.claimed || {}; s.miraMet = !!s.miraMet;
   const write = () => { try { localStorage.setItem(KEY, JSON.stringify(s)); } catch (e) {} };
   write();
   return {
@@ -63,6 +64,20 @@ export const save = (() => {
     locked(id) { return outfitById(id).rank > this.rankIdx(); },
     buy(id) { const o = outfitById(id); if (s.owned.includes(o.id) || s.money < o.price || this.locked(o.id)) return false; s.money -= o.price; s.owned.push(o.id); write(); return true; },
     setOutfit(id) { const o = outfitById(id); if (!s.owned.includes(o.id)) return false; s.outfit = o.id; write(); return true; },
+    miraMeet() { s.miraMet = true; write(); },
+    get miraMet() { return !!s.miraMet; },
+    questProg(id) { return s.quests[id] || 0; },
+    questAdd(id, n = 1) {
+      const q = MIRA.quests.find((x) => x.id === id); if (!q) return;
+      const prev = s.quests[id] || 0; if (prev >= q.goal) return;
+      s.quests[id] = Math.min(q.goal, prev + n); write();
+    },
+    questClaimed(id) { return !!s.claimed[id]; },
+    claimQuest(id) {
+      const q = MIRA.quests.find((x) => x.id === id);
+      if (!q || s.claimed[id] || (s.quests[id] || 0) < q.goal) return false;
+      s.claimed[id] = true; s.money += q.reward; write(); return true;
+    },
   };
 })();
 

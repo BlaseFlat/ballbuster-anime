@@ -12,6 +12,8 @@ import { Sfx } from './audio.js';
 import { UI } from './ui.js';
 import { OUTFITS, save, applyOutfit, outfitById } from './outfits.js';
 import { Shop } from './shop.js';
+import { Mira } from './mira.js';
+import { MIRA } from './config.js';
 
 const $ = (id) => document.getElementById(id);
 const Q = new URLSearchParams(location.search);
@@ -34,8 +36,8 @@ class Game {
     this.area = null;
   }
   async load(onProgress) {
-    const files = { rusana: 'vrm/rusana.vrm', guy_a: 'vrm/guy_a.vrm', guy_b: 'vrm/guy_b.vrm' };
-    const sizes = { rusana: 7.1e6, guy_a: 5.9e6, guy_b: 5.3e6, anim: 0.43e6 }, got = {};
+    const files = { rusana: 'vrm/rusana.vrm', guy_a: 'vrm/guy_a.vrm', guy_b: 'vrm/guy_b.vrm', mira: 'vrm/mira.vrm' };
+    const sizes = { rusana: 7.1e6, guy_a: 5.9e6, guy_b: 5.3e6, mira: 5.2e6, anim: 0.43e6 }, got = {};
     const tot = Object.values(sizes).reduce((a, b) => a + b, 0);
     const prog = (k) => (n) => { got[k] = n; onProgress(Object.values(got).reduce((a, b) => a + b, 0) / tot, 'Загрузка персонажей…'); };
     const animP = fetch(asset('anim/quaternius.json')).then((r) => r.json());
@@ -51,18 +53,22 @@ class Game {
       const a = new Actor(v, this.clipData, { prefix: 'g_', scale: def.scale }); this.scene.add(a.root);
       const g = new Guy(def, a, this); this.guys.push(g); a.root.position.copy(g.pos);
     }
+    const mv = await parseVRM(bufs.mira); stylize(mv, { rimColor: 0xd8f5ff });
+    const ma = new Actor(mv, this.clipData, { prefix: 'g_' }); this.scene.add(ma.root);
+    this.mira = new Mira(this, ma);
+
     // warm up shaders
     this.R.composer.render(); onProgress(1, 'Готово');
   }
   start() {
     this.started = true; this.sfx.init(); document.body.classList.add('playing');
     this.ui.toast('Неоновый район', 'Торговая улица'); this.area = 'street';
-    this.ui.hint('WASD — идти, Shift — бег, J/ЛКМ — ап-кик, K/ПКМ — колено, Пробел — уклон, F — добивание', 7);
+    this.ui.hint('WASD — идти · J/ЛКМ ап-кик · K/ПКМ колено · E — Мира · B — бутик. Один точный удар в пах — и он не встаёт.', 8);
   }
   // ------------------------------------------------ combat glue
   onStrike(guy, move, res, info) {
     const { grade } = res, pt = guy.hitPoint(new THREE.Vector3()), perfect = grade === 'perfect';
-    this.stats[grade]++;
+    this.stats[grade]++; this.stats._lastGrade = grade;
     if (DEBUG) console.log('strike', move, grade, res, info);
     guy.onHit(grade, move, this.now);
     const fin = move === 'finisher';
@@ -105,8 +111,11 @@ class Game {
     const style = 15 + Math.min(20, this.combo * 2);
     this.rep += style; save.fameUp(this.rep);
     // money: base per win + style bonus + tougher guys pay more
-    const cash = 40 + Math.min(40, this.combo * 5) + (guy.trait.tough > 1.2 ? 25 : 0) + (this.player.move === 'finisher' ? 20 : 0);
+    // shorter fights → slightly leaner payout; perfect one-shot bonus
+    const perfectKO = (this.stats._lastGrade === 'perfect');
+    const cash = 30 + Math.min(20, this.combo * 6) + (guy.trait.tough > 1.2 ? 15 : 0) + (this.player.move === 'finisher' ? 15 : 0) + (perfectKO ? 20 : 0);
     save.earn(cash); save.win(); this.stats.cash = (this.stats.cash || 0) + cash;
+    this.mira?.onWin(guy, this.stats._lastGrade || 'clean');
     setTimeout(() => { this.ui.toast(`${guy.def.name} сдался`, guy.def.win); this.ui.log(`${guy.def.name}: +${style} репутации, +${cash} ₽`); this.sfx.chord(); }, 1100);
     if (this.guys.every((g) => g.out)) setTimeout(() => this.finale(), 4200);
   }
@@ -122,8 +131,10 @@ class Game {
     addEventListener('keydown', (e) => {
       if (!this.started || e.repeat) { if (e.repeat) I.keys.add(e.code); return; }
       if (this.shopMode) { if (e.code === 'KeyM') this.ui.hint(this.sfx.toggle() ? 'Звук выключен' : 'Звук включён'); else this.shop.key(e); return; }
+      if (this.dialogOpen) { if (e.code === 'Escape' || e.code === 'KeyE') this.mira.close(); return; }
       I.keys.add(e.code);
       if (e.code === 'KeyB') { this.shop.enter(); return; }
+      if (e.code === 'KeyE') { this.mira?.tryTalk(); return; }
       if (e.code === 'KeyJ') this.player.request('kick');
       if (e.code === 'KeyK') this.player.request('knee');
       if (e.code === 'KeyF') this.player.request('finisher');
@@ -197,6 +208,11 @@ class Game {
       this.sky.material.uniforms.time.value = this.now; this.R.grade.uniforms.time.value = this.now;
       this.updateCamera(rdt); this.fx.update(rdt, rdt); this.R.composer.render(); this.R.adapt(rdt); return;
     }
+    if (this.dialogOpen) {
+      this.now += rdt; this.mira?.update(rdt); this.mira?.actor.update(rdt); this.rusana.update(rdt); this.world.update(this.now);
+      this.sky.material.uniforms.time.value = this.now; this.R.grade.uniforms.time.value = this.now;
+      this.updateCamera(rdt); this.fx.update(rdt, rdt); this.ui.update(rdt); this.R.composer.render(); this.R.adapt(rdt); return;
+    }
     let gs = 1, ps = 1;                                  // game (guys) and player time scales
     if (this.hitStop > 0) { this.hitStop -= rdt; gs = ps = 0.03; }
     else if (this.witch > 0) { this.witch -= rdt; gs = 0.3; if (this.witch <= 0) { this.fx.speedLines(0); this.R.grade.uniforms.tintAmt.value = 0; } }
@@ -213,7 +229,7 @@ class Game {
     }
     this.focusGuy = fg;
     if (this.comboT > 0 && (this.comboT -= dt) <= 0) this.breakCombo();
-    this.rusana.update(pdt); for (const g of this.guys) g.actor.update(dt);
+    this.rusana.update(pdt); for (const g of this.guys) g.actor.update(dt); this.mira?.update(dt); this.mira?.actor.update(dt);
     this.world.update(this.now); this.sky.material.uniforms.time.value = this.now; this.R.grade.uniforms.time.value = this.now;
     this.lights.follow(this.player.pos);
     this.updateCamera(rdt);

@@ -11,6 +11,10 @@
 - На VRoid Hub у этих сэмплов: Violent acts — Allow, Sexual acts — Allow.
 - Русана: текстуры и меш изменены (бордовый топ, шорты, причёска, пропорции, морф «Figure»). Наряды бутика — собственные текстуры поверх текстуры тела B; куртка-варсити и плиссированная юбка — оригинальные меши AvatarSample_B (укорочение/перекраска). guy_a / NPC: перекраска волос/одежды в рантайме.
 
+### Мира (HairSample_Female)
+- CC0 по FAQ pixiv (как HairSample_Male): https://vroid.pixiv.help/hc/en-us/articles/4402614652569
+- Перекраска волос/одежды в рантайме (бирюзовый топ).
+
 ### guy_b (HairSample_Male)
 - CC0 по FAQ pixiv: https://vroid.pixiv.help/hc/en-us/articles/4402614652569
 
